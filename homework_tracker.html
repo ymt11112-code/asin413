@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作業清點小幫手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; }
+        .status-btn {
+            padding: 0.5rem 0.5rem;
+            border-radius: 0.375rem;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            border: none;
+            width: 90px; /* 固定寬度縮小 */
+            text-align: center;
+        }
+        .status-btn:active {
+            transform: scale(0.95);
+        }
+        .table-cell {
+            padding: 0.75rem;
+            text-align: center;
+            vertical-align: middle;
+            border: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+        .header-cell {
+            padding: 0.75rem;
+            text-align: center;
+            vertical-align: middle;
+            border: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .header-cell:hover {
+            background-color: #f0f0f0 !important; /* Add important to override category color on hover */
+        }
+        .category-tag {
+            cursor: pointer;
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            margin-top: 0.25rem;
+            border-width: 1px;
+            transition: background-color 0.2s;
+        }
+        .interactive-status-item {
+             display: inline-block;
+             padding: 0.125rem 0.5rem;
+             margin: 0.125rem;
+             border-radius: 0.25rem;
+             cursor: pointer;
+             transition: background-color 0.2s;
+             border: 1px solid #e5e7eb;
+        }
+        .interactive-status-item:hover {
+            background-color: #f3f4f6;
+        }
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div id="app-container" class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">作業清點小幫手</h1>
+
+        <!-- 設定區 -->
+        <div id="setup-section" class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-xl font-semibold mb-4">首次設定</h2>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">1. 匯入資料 (可匯入學生名單或完整備份):</label>
+                <button id="import-csv-btn" class="w-full bg-sky-500 text-white py-2 px-4 rounded-md hover:bg-sky-600 font-semibold">匯入 CSV</button>
+                <input type="file" id="csv-file-input" class="hidden" accept=".csv">
+            </div>
+
+            <div class="relative flex py-5 items-center">
+                <div class="flex-grow border-t border-gray-300"></div>
+                <span class="flex-shrink mx-4 text-gray-500 text-sm">或</span>
+                <div class="flex-grow border-t border-gray-300"></div>
+            </div>
+
+            <div class="mb-4">
+                <label for="student-list" class="block text-sm font-medium text-gray-700 mb-2">2. 手動貼上學生名單 (一行一個，格式：座號 姓名 組別):</label>
+                 <div class="flex justify-end mb-1">
+                     <button id="download-csv-template-btn" class="text-xs bg-gray-200 text-gray-700 py-1 px-2 rounded-md hover:bg-gray-300 font-semibold">下載CSV範本</button>
+                </div>
+                <textarea id="student-list" rows="10" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500" placeholder="1 王小明 1A
+2 陳大華 1B
+3 林美麗 2A"></textarea>
+            </div>
+            <div class="mb-4">
+                <label for="sheet-url" class="block text-sm font-medium text-gray-700 mb-2">3. (可選) 貼上您的 Google Sheet 連結:</label>
+                <input type="url" id="sheet-url" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500" placeholder="https://docs.google.com/spreadsheets/d/...">
+            </div>
+            <button id="start-btn" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 font-semibold">開始使用</button>
+            
+            <p class="text-xs text-gray-500 mt-6">注意：所有資料將安全地儲存在您的瀏覽器中。清除瀏覽器快取可能會導致資料遺失。</p>
+        </div>
+
+        <!-- 主操作區 -->
+        <div id="main-section" class="hidden">
+            <div class="flex flex-wrap justify-center gap-2 mb-6">
+                <a id="open-sheet-btn" href="#" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 font-semibold">開啟資料庫</a>
+                <button id="show-status-btn" class="bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 font-semibold">作業狀態</button>
+                <button id="sort-btn" class="bg-purple-500 text-white py-2 px-4 rounded-md hover:bg-purple-600 font-semibold">依組別排列</button>
+                <button id="export-csv-btn" class="bg-teal-500 text-white py-2 px-4 rounded-md hover:bg-teal-600 font-semibold">匯出 CSV</button>
+                <button id="undo-btn" class="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 font-semibold opacity-50 cursor-not-allowed" disabled>還原</button>
+                <button id="redo-btn" class="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 font-semibold opacity-50 cursor-not-allowed" disabled>重做</button>
+                <button id="reset-btn" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 font-semibold">重設所有資料</button>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <input type="text" id="new-assignment-name" class="flex-grow p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500" placeholder="輸入作業名稱，可用頓號、空格批次新增 (例: 國習L1、數習P2)">
+                    <button id="add-assignment-btn" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 font-semibold">新增作業</button>
+                </div>
+            </div>
+
+            <!-- 作業表格 -->
+            <div class="overflow-x-auto bg-white rounded-lg shadow-md">
+                <table id="homework-table" class="w-full border-collapse">
+                    <thead id="table-head" class="bg-gray-100"></thead>
+                    <tbody id="table-body"></tbody>
+                    <tfoot id="table-foot" class="bg-gray-100"></tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="status-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-100 rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto p-6 relative">
+             <div class="flex justify-between items-center mb-6 relative">
+                <div class="flex items-center gap-2">
+                     <button id="expand-all-btn" class="bg-blue-100 text-blue-700 text-xs font-semibold py-1 px-3 rounded-full hover:bg-blue-200">全部展開</button>
+                     <button id="collapse-all-btn" class="bg-gray-200 text-gray-700 text-xs font-semibold py-1 px-3 rounded-full hover:bg-gray-300">全部收合</button>
+                </div>
+                <h2 class="text-2xl font-bold text-center text-gray-800 absolute left-1/2 -translate-x-1/2">各項作業狀態總覽</h2>
+                <div class="flex items-center gap-2">
+                    <button id="toggle-names-btn" class="bg-gray-200 text-gray-700 text-xs font-semibold py-1 px-3 rounded-full hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400" title="切換姓名顯示">隱藏姓名</button>
+                    <button id="refresh-status-btn" class="bg-blue-100 text-blue-700 rounded-full p-2 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400" title="重新整理">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 110 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg>
+                    </button>
+                </div>
+            </div>
+            <div id="status-content" class="space-y-4"></div>
+            <button id="close-status-modal-btn" class="absolute top-4 right-4 bg-gray-200 text-gray-800 rounded-full p-2 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+        </div>
+    </div>
+
+    <div id="student-status-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 relative">
+            <div class="flex justify-between items-center mb-2 relative">
+                <div class="flex items-center gap-2">
+                    <button id="one-click-complete-btn" class="bg-green-500 text-white py-1 px-3 rounded-md hover:bg-green-600 font-semibold text-sm">一鍵完成</button>
+                    <button id="undo-student-btn" class="bg-gray-500 text-white py-1 px-3 rounded-md hover:bg-gray-600 font-semibold text-sm opacity-50 cursor-not-allowed" disabled>還原</button>
+                    <button id="redo-student-btn" class="bg-gray-500 text-white py-1 px-3 rounded-md hover:bg-gray-600 font-semibold text-sm opacity-50 cursor-not-allowed" disabled>重做</button>
+                </div>
+                <h2 id="student-status-title" class="text-2xl font-bold text-center text-gray-800 absolute left-1/2 -translate-x-1/2 w-max"></h2>
+                <div class="flex items-center gap-2">
+                    <button id="refresh-student-status-btn" class="bg-blue-100 text-blue-700 rounded-full p-2 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400" title="重新整理"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 110 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg></button>
+                    <button id="close-student-status-modal-btn" class="bg-gray-200 text-gray-800 rounded-full p-2 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+                </div>
+            </div>
+            <div class="flex justify-center items-center gap-4 mb-4">
+                <button id="prev-student-btn" class="bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 font-semibold">&lt; 上一位</button>
+                <select id="student-select-dropdown" class="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 max-w-xs"></select>
+                <button id="next-student-btn" class="bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 font-semibold">下一位 &gt;</button>
+            </div>
+            <div id="student-status-summary" class="bg-red-100 border border-red-300 text-red-800 text-center p-3 rounded-md mb-6"></div>
+            <div id="student-status-content"></div>
+            <div id="student-status-completed-section" class="mt-8 pt-6 border-t border-gray-200"></div>
+        </div>
+    </div>
+    
+    <div id="group-status-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto p-6 relative">
+            <div class="flex justify-between items-center mb-4 relative">
+                 <h2 id="group-status-title" class="text-2xl font-bold text-gray-800">各組作業概況</h2>
+                 <div class="flex items-center gap-4">
+                    <button id="toggle-group-view-btn" class="py-2 px-4 rounded-md text-sm font-semibold"></button>
+                    <select id="group-select-dropdown" class="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"></select>
+                 </div>
+                 <button id="close-group-status-modal-btn" class="absolute -top-2 -right-2 bg-gray-200 text-gray-800 rounded-full p-2 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div id="group-status-content" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center">
+            <h3 class="text-lg font-semibold mb-4" id="confirm-modal-text">您確定要執行此操作嗎？</h3>
+            <div class="flex justify-center gap-4">
+                <button id="cancel-delete-btn" class="bg-gray-300 text-gray-800 py-2 px-6 rounded-md hover:bg-gray-400 font-semibold">取消</button>
+                <button id="confirm-delete-btn" class="bg-red-600 text-white py-2 px-6 rounded-md hover:bg-red-700 font-semibold">確定</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="batch-input-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h2 id="batch-input-title" class="text-xl font-bold mb-4 text-center">批次輸入座號</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="corrected-input" class="block text-sm font-medium text-blue-600">已訂正 (座號)</label>
+                    <input type="text" id="corrected-input" class="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" placeholder="用空格或逗號分隔座號">
+                </div>
+                <div>
+                    <label for="needs-correction-input" class="block text-sm font-medium text-yellow-600">待訂正 (座號)</label>
+                    <input type="text" id="needs-correction-input" class="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-500" placeholder="用空格或逗號分隔座號">
+                </div>
+                <div>
+                    <label for="not-submitted-input" class="block text-sm font-medium text-red-600">未繳交 (座號)</label>
+                    <input type="text" id="not-submitted-input" class="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500" placeholder="用空格或逗號分隔座號">
+                </div>
+                <div>
+                    <label for="missing-signature-input" class="block text-sm font-medium text-purple-600">缺簽名 (座號)</label>
+                    <input type="text" id="missing-signature-input" class="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500" placeholder="用空格或逗號分隔座號">
+                </div>
+            </div>
+            <div class="flex justify-end gap-4 mt-6">
+                <button id="cancel-batch-input-btn" class="bg-gray-300 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-400 font-semibold">取消</button>
+                <button id="confirm-batch-input-btn" class="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 font-semibold">確認送出</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="choice-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center">
+            <h3 class="text-lg font-semibold mb-4">請選擇下一個狀態：</h3>
+            <div id="choice-modal-buttons" class="flex flex-wrap justify-center gap-4"></div>
+            <button id="cancel-choice-btn" class="mt-6 bg-gray-300 text-gray-800 py-2 px-6 rounded-md hover:bg-gray-400 font-semibold">取消</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- App State ---
+        let appState = { students: [], assignments: [], sheetUrl: '' };
+        let history = [];
+        let historyIndex = -1;
+        let sortBy = 'number';
+        let statusModalShowNames = true;
+        let groupView = 'individual'; // 'individual' or 'all'
+        const STATUSES = ['未繳交', '已繳交', '待訂正', '已訂正', '缺簽名'];
+        const STATUS_COLORS = { '未繳交': 'bg-red-500 hover:bg-red-600', '已繳交': 'bg-green-500 hover:bg-green-600', '待訂正': 'bg-yellow-500 hover:bg-yellow-600', '已訂正': 'bg-blue-500 hover:bg-blue-600', '缺簽名': 'bg-purple-500 hover:bg-purple-600' };
+        const CATEGORIES = ['國語', '數學', '聯絡簿', '音樂', '其他'];
+        const CATEGORY_COLORS = { 
+            '國語': 'bg-blue-50', 
+            '數學': 'bg-pink-50', 
+            '聯絡簿': 'bg-green-50',
+            '音樂': 'bg-gray-100',
+            '其他': '' 
+        };
+        const CATEGORY_TAG_COLORS = {
+            '國語': 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200',
+            '數學': 'bg-pink-100 text-pink-800 border-pink-200 hover:bg-pink-200',
+            '聯絡簿': 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200',
+            '音樂': 'bg-gray-200 text-gray-800 border-gray-300 hover:bg-gray-300',
+            '其他': 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200'
+        };
+
+        // --- DOM Elements ---
+        const setupSection = document.getElementById('setup-section');
+        const mainSection = document.getElementById('main-section');
+        const studentListInput = document.getElementById('student-list');
+        const sheetUrlInput = document.getElementById('sheet-url');
+        const startBtn = document.getElementById('start-btn');
+        const openSheetBtn = document.getElementById('open-sheet-btn');
+        const newAssignmentNameInput = document.getElementById('new-assignment-name');
+        const addAssignmentBtn = document.getElementById('add-assignment-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const undoBtn = document.getElementById('undo-btn');
+        const redoBtn = document.getElementById('redo-btn');
+        const sortBtn = document.getElementById('sort-btn');
+        const tableHead = document.getElementById('table-head');
+        const tableBody = document.getElementById('table-body');
+        const tableFoot = document.getElementById('table-foot');
+        const showStatusBtn = document.getElementById('show-status-btn');
+        const exportCsvBtn = document.getElementById('export-csv-btn');
+        const importCsvBtn = document.getElementById('import-csv-btn');
+        const csvFileInput = document.getElementById('csv-file-input');
+        const downloadCsvTemplateBtn = document.getElementById('download-csv-template-btn');
+        const statusModal = document.getElementById('status-modal');
+        const statusContent = document.getElementById('status-content');
+        const closeStatusModalBtn = document.getElementById('close-status-modal-btn');
+        const refreshStatusBtn = document.getElementById('refresh-status-btn');
+        const toggleNamesBtn = document.getElementById('toggle-names-btn');
+        const expandAllBtn = document.getElementById('expand-all-btn');
+        const collapseAllBtn = document.getElementById('collapse-all-btn');
+        const studentStatusModal = document.getElementById('student-status-modal');
+        const studentStatusTitle = document.getElementById('student-status-title');
+        const studentStatusSummary = document.getElementById('student-status-summary');
+        const studentStatusContent = document.getElementById('student-status-content');
+        const studentStatusCompletedSection = document.getElementById('student-status-completed-section');
+        const closeStudentStatusModalBtn = document.getElementById('close-student-status-modal-btn');
+        const refreshStudentStatusBtn = document.getElementById('refresh-student-status-btn');
+        const oneClickCompleteBtn = document.getElementById('one-click-complete-btn');
+        const prevStudentBtn = document.getElementById('prev-student-btn');
+        const nextStudentBtn = document.getElementById('next-student-btn');
+        const studentSelectDropdown = document.getElementById('student-select-dropdown');
+        const undoStudentBtn = document.getElementById('undo-student-btn');
+        const redoStudentBtn = document.getElementById('redo-student-btn');
+        const confirmModal = document.getElementById('confirm-modal');
+        const confirmModalText = document.getElementById('confirm-modal-text');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const batchInputModal = document.getElementById('batch-input-modal');
+        const batchInputTitle = document.getElementById('batch-input-title');
+        const correctedInput = document.getElementById('corrected-input');
+        const needsCorrectionInput = document.getElementById('needs-correction-input');
+        const notSubmittedInput = document.getElementById('not-submitted-input');
+        const missingSignatureInput = document.getElementById('missing-signature-input');
+        const confirmBatchInputBtn = document.getElementById('confirm-batch-input-btn');
+        const cancelBatchInputBtn = document.getElementById('cancel-batch-input-btn');
+        const choiceModal = document.getElementById('choice-modal');
+        const choiceModalButtons = document.getElementById('choice-modal-buttons');
+        const cancelChoiceBtn = document.getElementById('cancel-choice-btn');
+        const groupStatusModal = document.getElementById('group-status-modal');
+        const groupStatusTitle = document.getElementById('group-status-title');
+        const toggleGroupViewBtn = document.getElementById('toggle-group-view-btn');
+        const groupSelectDropdown = document.getElementById('group-select-dropdown');
+        const groupStatusContent = document.getElementById('group-status-content');
+        const closeGroupStatusModalBtn = document.getElementById('close-group-status-modal-btn');
+
+
+        // --- Helper Functions ---
+        function autoCategorize(name) {
+            if (/國|語|習作|生字|閱讀|圈詞|造句|作文/.test(name)) return '國語';
+            if (/數|M習|M重/.test(name)) return '數學';
+            if (/聯絡簿|聯絡本/.test(name)) return '聯絡簿';
+            if (/音樂|音/.test(name)) return '音樂';
+            return '其他';
+        }
+
+        function customGroupSort(a, b) {
+            const groupSortOrder = {
+                '一': 1, '二': 2, '三': 3, '四': 4, '五': 5,
+                '六': 6, '七': 7, '八': 8, '九': 9, '十': 10
+            };
+            const valA = groupSortOrder[a];
+            const valB = groupSortOrder[b];
+
+            if (valA !== undefined && valB !== undefined) {
+                return valA - valB;
+            }
+            if (valA !== undefined) return -1;
+            if (valB !== undefined) return 1;
+
+            return a.localeCompare(b, undefined, { numeric: true });
+        }
+
+        function updateHistoryButtonsState() {
+            const canUndo = historyIndex > 0;
+            const canRedo = historyIndex < history.length - 1;
+
+            [undoBtn, undoStudentBtn].forEach(btn => {
+                if (btn) {
+                    btn.disabled = !canUndo;
+                    btn.classList.toggle('opacity-50', !canUndo);
+                    btn.classList.toggle('cursor-not-allowed', !canUndo);
+                }
+            });
+
+            [redoBtn, redoStudentBtn].forEach(btn => {
+                if (btn) {
+                    btn.disabled = !canRedo;
+                    btn.classList.toggle('opacity-50', !canRedo);
+                    btn.classList.toggle('cursor-not-allowed', !canRedo);
+                }
+            });
+        }
+        
+        function updateOpenSheetBtnState() {
+            if (appState.sheetUrl && appState.sheetUrl.startsWith('http')) {
+                openSheetBtn.href = appState.sheetUrl;
+                openSheetBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
+                openSheetBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                openSheetBtn.setAttribute('target', '_blank');
+                openSheetBtn.title = "在新分頁中開啟 Google Sheet";
+            } else {
+                openSheetBtn.href = 'javascript:void(0)';
+                openSheetBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                openSheetBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                openSheetBtn.classList.add('bg-gray-400');
+                openSheetBtn.removeAttribute('target');
+                openSheetBtn.title = "請在初始設定中提供有效的 Google Sheet 連結";
+            }
+        }
+
+        // --- Data Persistence ---
+        function recordState() {
+            if (historyIndex < history.length - 1) {
+                history.splice(historyIndex + 1);
+            }
+            history.push(JSON.stringify(appState));
+            historyIndex++;
+            if (history.length > 30) {
+                history.shift();
+                historyIndex--;
+            }
+            updateHistoryButtonsState();
+        }
+
+        function updateStateAndSave() {
+            recordState();
+            saveData();
+        }
+
+        function saveData() { 
+            localStorage.setItem('homeworkTrackerData', JSON.stringify(appState)); 
+        }
+        
+        function loadData() {
+            const data = localStorage.getItem('homeworkTrackerData');
+            if (data) {
+                appState = JSON.parse(data);
+                if (appState.students.length > 0) {
+                    setupSection.classList.add('hidden');
+                    mainSection.classList.remove('hidden');
+                    updateOpenSheetBtnState();
+                    history = [];
+                    historyIndex = -1;
+                    recordState();
+                    renderTable();
+                }
+            }
+            updateHistoryButtonsState();
+        }
+
+        // --- Core Rendering ---
+        function renderTable() {
+            tableHead.innerHTML = '';
+            tableBody.innerHTML = '';
+            tableFoot.innerHTML = '';
+            if (appState.students.length === 0) return;
+            
+            const sortedStudents = [...appState.students];
+            if (sortBy === 'group') {
+                sortedStudents.sort((a, b) => {
+                    const groupCompare = (a.group || '').localeCompare(b.group || '');
+                    if (groupCompare !== 0) return groupCompare;
+                    return parseInt(a.number, 10) - parseInt(b.number, 10);
+                });
+            } else { // default is 'number'
+                sortedStudents.sort((a, b) => parseInt(a.number, 10) - parseInt(b.number, 10));
+            }
+
+
+            // --- 批次輸入列 ---
+            const inputRow = document.createElement('tr');
+            inputRow.innerHTML = `<th class="table-cell font-semibold sticky left-0 bg-gray-100 z-30" colspan="3">批次輸入</th>`;
+            appState.assignments.forEach((assignment, index) => {
+                const category = assignment.category || '其他';
+                const colorClass = CATEGORY_COLORS[category] || '';
+                const th = document.createElement('th');
+                th.className = `table-cell bg-gray-100 ${colorClass}`;
+                const inputBtn = document.createElement('button');
+                inputBtn.textContent = '輸入';
+                inputBtn.className = 'bg-slate-500 text-white py-1 px-3 rounded-md hover:bg-slate-600 text-xs font-semibold';
+                inputBtn.addEventListener('click', () => handleShowBatchInput(index));
+                th.appendChild(inputBtn);
+                inputRow.appendChild(th);
+            });
+
+            // --- 作業標題列 ---
+            const headerRow = document.createElement('tr');
+            headerRow.innerHTML = `<th class="table-cell font-semibold sticky left-0 bg-gray-100 z-20 w-16">座號</th>
+                                   <th class="table-cell font-semibold sticky left-[64px] bg-gray-100 z-20 w-32 border-l-0">姓名</th>
+                                   <th class="table-cell font-semibold sticky left-[192px] bg-gray-100 z-20 w-16 border-l-0">組別</th>`;
+            appState.assignments.forEach((assignment, index) => {
+                const category = assignment.category || '其他';
+                const colorClass = CATEGORY_COLORS[category] || '';
+                const tagColorClass = CATEGORY_TAG_COLORS[category];
+
+                const th = document.createElement('th');
+                th.className = `header-cell font-semibold ${colorClass}`;
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.textContent = assignment.name;
+                
+                const dateDiv = document.createElement('div');
+                dateDiv.className = 'text-xs font-normal text-gray-500';
+                dateDiv.textContent = new Date(assignment.date).toLocaleDateString();
+
+                const categoryTag = document.createElement('div');
+                categoryTag.className = `category-tag ${tagColorClass}`;
+                categoryTag.textContent = category;
+                categoryTag.title = '點擊切換科目';
+                categoryTag.addEventListener('click', (e) => {
+                    e.stopPropagation(); // 避免觸發整欄變更
+                    handleChangeCategory(index);
+                });
+
+                th.appendChild(nameDiv);
+                th.appendChild(dateDiv);
+                th.appendChild(categoryTag);
+                th.addEventListener('click', () => handleColumnStatusChange(index));
+                headerRow.appendChild(th);
+            });
+            tableHead.appendChild(inputRow);
+            tableHead.appendChild(headerRow);
+
+            // --- 學生資料列 ---
+            sortedStudents.forEach((student) => {
+                const studentIndex = appState.students.findIndex(s => s.id === student.id);
+                const studentRow = document.createElement('tr');
+                const rowIndex = sortedStudents.findIndex(s => s.id === student.id);
+                studentRow.className = rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+
+                const incompleteCount = appState.assignments.filter(a => ['未繳交', '待訂正', '缺簽名'].includes(student.statuses[a.id] || '未繳交')).length;
+                
+                studentRow.innerHTML += `<td class="table-cell font-medium sticky left-0 z-10 w-16 ${studentRow.className}">${student.number || ''}</td>`;
+                
+                const nameTd = document.createElement('td');
+                nameTd.className = `table-cell font-medium sticky left-[64px] z-10 w-32 ${studentRow.className} border-l-0`;
+                const nameButton = document.createElement('button');
+                nameButton.className = 'text-indigo-600 hover:text-indigo-800 hover:underline focus:outline-none';
+                nameButton.textContent = `${student.name} (${incompleteCount})`;
+                nameButton.addEventListener('click', () => handleShowStudentStatus(studentIndex));
+                nameTd.appendChild(nameButton);
+                studentRow.appendChild(nameTd);
+
+                const groupTd = document.createElement('td');
+                groupTd.className = `table-cell font-medium sticky left-[192px] z-10 w-16 ${studentRow.className} border-l-0`;
+                if (student.group) {
+                    const groupBtn = document.createElement('button');
+                    groupBtn.className = 'text-purple-600 hover:text-purple-800 hover:underline focus:outline-none font-semibold';
+                    groupBtn.textContent = student.group;
+                    groupBtn.onclick = () => handleShowGroupStatus(student.group);
+                    groupTd.appendChild(groupBtn);
+                }
+                studentRow.appendChild(groupTd);
+
+                appState.assignments.forEach((assignment, assignmentIndex) => {
+                    const status = student.statuses[assignment.id] || '未繳交';
+                    const category = assignment.category || '其他';
+                    const colorClass = CATEGORY_COLORS[category] || '';
+                    const td = document.createElement('td');
+                    td.className = `table-cell ${colorClass}`;
+                    const button = document.createElement('button');
+                    button.textContent = status;
+                    button.className = `status-btn ${STATUS_COLORS[status]}`;
+                    button.addEventListener('click', () => handleStatusChange(studentIndex, assignmentIndex));
+                    td.appendChild(button);
+                    studentRow.appendChild(td);
+                });
+                tableBody.appendChild(studentRow);
+            });
+            
+            // --- 刪除列 ---
+            const footerRow = document.createElement('tr');
+            footerRow.innerHTML = `<td class="table-cell font-semibold sticky left-0 bg-gray-100 z-10" colspan="3">刪除作業</td>`;
+            appState.assignments.forEach((assignment, index) => {
+                const category = assignment.category || '其他';
+                const colorClass = CATEGORY_COLORS[category] || '';
+                const td = document.createElement('td');
+                td.className = `table-cell ${colorClass}`;
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '刪除';
+                deleteBtn.className = 'bg-gray-400 text-white py-1 px-3 rounded hover:bg-gray-500 text-sm';
+                deleteBtn.addEventListener('click', () => handleDeleteAssignment(index));
+                td.appendChild(deleteBtn);
+                footerRow.appendChild(td);
+            });
+            tableFoot.appendChild(footerRow);
+        }
+
+        // --- Event Handlers ---
+        function handleStart() {
+            const lines = studentListInput.value.trim().split('\n').filter(line => line.trim() !== '');
+            if (lines.length === 0) { alert('請至少輸入一位學生！'); return; }
+            appState.students = lines.map((line, index) => {
+                const parts = line.trim().split(/\s+/);
+                const number = parts.shift() || '?';
+                const group = parts.pop() || '?';
+                const name = parts.join(' ');
+                return { id: index, number, name: name || '未命名', group, statuses: {} };
+            });
+            appState.sheetUrl = sheetUrlInput.value.trim();
+            history = [];
+            historyIndex = -1;
+            updateStateAndSave();
+            setupSection.classList.add('hidden');
+            mainSection.classList.remove('hidden');
+            updateOpenSheetBtnState();
+            renderTable();
+        }
+
+        function handleAddAssignment() {
+            const names = newAssignmentNameInput.value.trim().split(/[、\s]+/).filter(name => name);
+            if (names.length === 0) { alert('請輸入作業名稱！'); return; }
+            
+            names.reverse().forEach((name, i) => {
+                 const newAssignment = { 
+                    id: Date.now() + i, 
+                    name, 
+                    date: new Date().toISOString(), 
+                    category: autoCategorize(name) 
+                };
+                appState.assignments.unshift(newAssignment);
+            });
+            newAssignmentNameInput.value = '';
+            updateStateAndSave();
+            renderTable();
+        }
+
+        function handleChangeCategory(assignmentIndex) {
+            const assignment = appState.assignments[assignmentIndex];
+            const currentCategoryIndex = CATEGORIES.indexOf(assignment.category || '其他');
+            const nextCategoryIndex = (currentCategoryIndex + 1) % CATEGORIES.length;
+            assignment.category = CATEGORIES[nextCategoryIndex];
+            updateStateAndSave();
+            renderTable();
+        }
+
+        function handleStatusChange(studentIndex, assignmentIndex) {
+            const student = appState.students[studentIndex];
+            const assignmentId = appState.assignments[assignmentIndex].id;
+            const currentStatus = student.statuses[assignmentId] || '未繳交';
+            student.statuses[assignmentId] = STATUSES[(STATUSES.indexOf(currentStatus) + 1) % STATUSES.length];
+            updateStateAndSave();
+            renderTable();
+        }
+        
+        function handleColumnStatusChange(assignmentIndex) {
+            const HEADER_STATUSES = ['已繳交', '待訂正', '已訂正', '缺簽名', '未繳交'];
+            const assignmentId = appState.assignments[assignmentIndex].id;
+            const firstStatus = appState.students[0]?.statuses[assignmentId] || '未繳交';
+            const allSame = appState.students.every(s => (s.statuses[assignmentId] || '未繳交') === firstStatus);
+            let nextStatus = HEADER_STATUSES[0];
+            if (allSame) {
+                const currentIndex = HEADER_STATUSES.indexOf(firstStatus);
+                nextStatus = HEADER_STATUSES[currentIndex === -1 || currentIndex === HEADER_STATUSES.length - 1 ? 0 : currentIndex + 1];
+            }
+            appState.students.forEach(student => student.statuses[assignmentId] = nextStatus);
+            updateStateAndSave();
+            renderTable();
+        }
+
+        function handleDeleteAssignment(assignmentIndex) {
+            const assignmentName = appState.assignments[assignmentIndex].name;
+            confirmModalText.textContent = `您確定要刪除「${assignmentName}」這項作業嗎？此操作無法復原。`;
+            confirmModal.classList.remove('hidden');
+            
+            confirmDeleteBtn.onclick = () => {
+                const assignmentIdToDelete = appState.assignments[assignmentIndex].id;
+                appState.assignments.splice(assignmentIndex, 1);
+                appState.students.forEach(student => { delete student.statuses[assignmentIdToDelete]; });
+                updateStateAndSave();
+                renderTable();
+                confirmModal.classList.add('hidden');
+            };
+        }
+        
+        function handleReset() {
+            confirmModalText.textContent = '您確定要刪除所有資料嗎？此操作無法復原！';
+            confirmModal.classList.remove('hidden');
+            confirmDeleteBtn.onclick = () => {
+                localStorage.removeItem('homeworkTrackerData');
+                appState = { students: [], assignments: [], sheetUrl: '' };
+                history = [];
+                historyIndex = -1;
+                recordState();
+                studentListInput.value = '';
+                sheetUrlInput.value = '';
+                mainSection.classList.add('hidden');
+                setupSection.classList.remove('hidden');
+                updateHistoryButtonsState();
+                updateOpenSheetBtnState();
+                renderTable();
+                confirmModal.classList.add('hidden');
+            };
+        }
+
+        function handleShowStatus() {
+            statusContent.innerHTML = '';
+            toggleNamesBtn.textContent = statusModalShowNames ? '隱藏姓名' : '顯示姓名';
+            const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+            if (appState.assignments.length === 0) {
+                statusContent.innerHTML = `<p class="text-gray-500 col-span-full text-center">尚未新增任何作業。</p>`;
+                statusModal.classList.remove('hidden');
+                return;
+            }
+
+            const assignmentsByDate = appState.assignments.reduce((acc, assignment) => {
+                const date = new Date(assignment.date);
+                const dateString = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
+                if (!acc[dateString]) acc[dateString] = [];
+                acc[dateString].push(assignment);
+                return acc;
+            }, {});
+
+            const sortedDates = Object.keys(assignmentsByDate).sort((a, b) => new Date(b) - new Date(a));
+            let hasAnyIncompleteOverall = false;
+
+            sortedDates.forEach(dateString => {
+                const assignmentsForDate = assignmentsByDate[dateString];
+                const date = new Date(dateString);
+                const displayDate = `${(date.getMonth() + 1)}/${date.getDate()}(${weekDays[date.getDay()]})`;
+                
+                let hasIncompleteForDate = false;
+
+                const allAssignmentsWithDetails = assignmentsForDate.map(assignment => {
+                    const statusGroups = { '未繳交': [], '待訂正': [], '缺簽名': [] };
+                     appState.students.forEach(student => {
+                        const status = student.statuses[assignment.id] || '未繳交';
+                        if (status in statusGroups) statusGroups[status].push(student);
+                    });
+                    const hasAnyIncomplete = Object.values(statusGroups).some(g => g.length > 0);
+                    if (hasAnyIncomplete) {
+                        hasAnyIncompleteOverall = true;
+                        hasIncompleteForDate = true;
+                    }
+                    return { assignment, statusGroups, hasAnyIncomplete };
+                }).sort((a, b) => {
+                    if (a.hasAnyIncomplete === b.hasAnyIncomplete) return 0;
+                    return a.hasAnyIncomplete ? -1 : 1;
+                });
+                
+                const incompleteAssignmentsWithDetails = allAssignmentsWithDetails.filter(item => item.hasAnyIncomplete);
+
+                let summaryText = '';
+                if (hasIncompleteForDate) {
+                     summaryText = incompleteAssignmentsWithDetails
+                        .map(item => {
+                            const incompleteCount = item.statusGroups['待訂正'].length + item.statusGroups['未繳交'].length + item.statusGroups['缺簽名'].length;
+                            return `${item.assignment.name}(${incompleteCount})`;
+                        })
+                        .join('、 ');
+                } else {
+                    summaryText = '<span class="text-green-600 font-semibold">全部完成</span>';
+                }
+
+                const contentId = `content-${dateString.replace(/\//g, '-')}`;
+                let cardHTML = `
+                <div class="bg-white rounded-lg shadow-sm">
+                    <button class="w-full text-left flex justify-between items-center p-4" ${!hasIncompleteForDate ? 'disabled' : ''} data-toggle-id="${contentId}">
+                        <div class="flex-grow">
+                            <div class="flex items-baseline gap-x-4">
+                                <h3 class="text-xl font-bold text-indigo-700 flex-shrink-0">${displayDate}</h3>
+                                <div class="text-sm text-gray-600 text-left">${summaryText}</div>
+                            </div>
+                        </div>
+                        ${hasIncompleteForDate ? `<svg class="w-6 h-6 transform transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>` : ''}
+                    </button>
+                    <div id="${contentId}" class="collapsible-content">
+                        <div class="px-4 pb-4">`;
+
+                if (hasIncompleteForDate) {
+                    const columnsToShow = { '待訂正': false, '未繳交': false, '缺簽名': false };
+                    allAssignmentsWithDetails.forEach(item => {
+                        if (item.statusGroups['待訂正'].length > 0) columnsToShow['待訂正'] = true;
+                        if (item.statusGroups['未繳交'].length > 0) columnsToShow['未繳交'] = true;
+                        if (item.statusGroups['缺簽名'].length > 0) columnsToShow['缺簽名'] = true;
+                    });
+                    
+                    let tableHeaderHTML = `<tr>
+                        <th class="py-2 px-2 w-12 font-semibold border-b-2 border-gray-300 text-center">編號</th>
+                        <th class="py-2 px-2 w-32 font-semibold border-b-2 border-gray-300">作業</th>`;
+                    if(columnsToShow['待訂正']) tableHeaderHTML += `<th class="py-2 px-2 font-semibold text-yellow-600 border-b-2 border-yellow-200">待訂正</th>`;
+                    if(columnsToShow['未繳交']) tableHeaderHTML += `<th class="py-2 px-2 font-semibold text-red-600 border-b-2 border-red-200">未繳交</th>`;
+                    if(columnsToShow['缺簽名']) tableHeaderHTML += `<th class="py-2 px-2 font-semibold text-purple-600 border-b-2 border-purple-200">缺簽名</th>`;
+                    tableHeaderHTML += `</tr>`;
+
+                    let tableBodyHTML = '';
+                    allAssignmentsWithDetails.forEach((item, index) => {
+                         const studentListHTML = (status) => {
+                            const students = item.statusGroups[status];
+                            if (students.length === 0) return '<span class="text-gray-400">-</span>';
+                            if (!statusModalShowNames) {
+                                const studentNumbers = students.map(s => s.number).join('、');
+                                return `${students.length}人<br><span class="text-xs text-gray-500">(${studentNumbers})</span>`;
+                            }
+                            return students.map(s => `${s.number}-${s.name}`).join('、 ');
+                        };
+                        
+                        if(item.hasAnyIncomplete) {
+                            tableBodyHTML += `<tr class="border-t">
+                                <td class="p-2 text-center font-semibold text-gray-600">${index + 1}</td>
+                                <td class="p-2 text-left font-semibold text-gray-800">${item.assignment.name}</td>`;
+                            if(columnsToShow['待訂正']) tableBodyHTML += `<td class="p-2 text-left text-gray-700 leading-relaxed">${studentListHTML('待訂正')}</td>`;
+                            if(columnsToShow['未繳交']) tableBodyHTML += `<td class="p-2 text-left text-gray-700 leading-relaxed">${studentListHTML('未繳交')}</td>`;
+                            if(columnsToShow['缺簽名']) tableBodyHTML += `<td class="p-2 text-left text-gray-700 leading-relaxed">${studentListHTML('缺簽名')}</td>`;
+                            tableBodyHTML += `</tr>`;
+                        } else {
+                            const colCount = Object.values(columnsToShow).filter(Boolean).length + 1;
+                            tableBodyHTML += `<tr class="border-t bg-green-50 opacity-60">
+                                <td class="p-2 text-center font-semibold text-gray-500">${index + 1}</td>
+                                <td class="p-2 text-left font-semibold text-gray-700">${item.assignment.name}</td>
+                                <td colspan="${colCount}" class="p-2 text-center text-green-700 font-semibold">全部完成 ✔</td>
+                            </tr>`;
+                        }
+                    });
+                    
+                    cardHTML += `<div class="overflow-x-auto">
+                                <table class="w-full text-sm border-collapse table-fixed">
+                                    <thead class="text-left bg-white">${tableHeaderHTML}</thead>
+                                    <tbody>${tableBodyHTML}</tbody>
+                                </table>
+                            </div>`;
+                }
+                cardHTML += `</div></div></div>`;
+                statusContent.innerHTML += cardHTML;
+            });
+
+            if (!hasAnyIncompleteOverall) {
+                statusContent.innerHTML = `<p class="text-green-600 font-semibold col-span-full text-center text-lg">太棒了！所有作業都已完成！</p>`;
+            }
+            statusModal.classList.remove('hidden');
+
+            // Default expansion for the first day
+            const firstCollapsible = statusContent.querySelector('.collapsible-content');
+            if(firstCollapsible) {
+                const firstButton = statusContent.querySelector(`[data-toggle-id="${firstCollapsible.id}"]`);
+                if (firstButton && !firstButton.disabled) {
+                    toggleCollapsible(firstCollapsible, firstButton);
+                }
+            }
+        }
+        
+        const renderInteractiveList = (assignments, status) => {
+            if (assignments.length === 0) return '<div class="text-gray-400 text-sm">無</div>';
+            const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+
+            const grouped = assignments.reduce((acc, assignment) => {
+                const originalName = assignment.name;
+                const category = assignment.category;
+
+                if (category === '聯絡簿') {
+                    const base = '聯絡簿';
+                    if (!acc[base]) acc[base] = [];
+                    acc[base].push(assignment);
+                } else {
+                    const match = originalName.match(/^([\u4e00-\u9fa5]+)/);
+                    let base = match ? match[0] : originalName.split(/[0-9LP]/)[0] || originalName;
+                    
+                    if (base === "M習") base = "數習";
+                    if (base === "M重") base = "數重";
+
+                    if (!acc[base]) acc[base] = [];
+                    acc[base].push(assignment);
+                }
+                return acc;
+            }, {});
+
+            let html = '';
+            let counter = 1;
+            for (const baseName in grouped) {
+                const groupedAssignments = grouped[baseName];
+                
+                const partsHTML = groupedAssignments.map(assignment => {
+                    let partName;
+                    if (baseName === '聯絡簿') {
+                        const date = new Date(assignment.date);
+                        partName = `(${date.getMonth() + 1}/${date.getDate()}(${weekDays[date.getDay()]}))`;
+                    } else {
+                        partName = assignment.name.substring(baseName.length).trim() || assignment.name;
+                    }
+                    return `<button class="interactive-status-item" data-assignment-ids="${assignment.id}" data-current-status="${status}">${partName}</button>`;
+                }).join('');
+
+                html += `<div class="py-1 flex items-start">
+                            <span class="font-semibold text-gray-500 pt-1">${counter++}.</span>
+                            <div class="pl-2">
+                                <span class="font-semibold pt-1">${baseName}：</span>
+                                ${partsHTML}
+                            </div>
+                         </div>`;
+            }
+            return html;
+        };
+
+        function handleShowStudentStatus(studentIndex) {
+            studentStatusModal.dataset.studentIndex = studentIndex;
+            const student = appState.students[studentIndex];
+            studentStatusTitle.textContent = `${student.number} ${student.name} 的作業狀態`;
+            
+            studentSelectDropdown.innerHTML = '';
+            appState.students.forEach((s, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${s.number} ${s.name}`;
+                studentSelectDropdown.appendChild(option);
+            });
+            studentSelectDropdown.value = studentIndex;
+
+            const incompleteStatuses = ['未繳交', '待訂正', '缺簽名'];
+            const completedStatuses = ['已訂正', '已繳交'];
+            
+            const incompleteAssignments = appState.assignments.filter(assignment => incompleteStatuses.includes(student.statuses[assignment.id] || '未繳交'));
+            const completedAssignments = appState.assignments.filter(assignment => completedStatuses.includes(student.statuses[assignment.id]));
+            const incompleteCount = incompleteAssignments.length;
+
+            const statusGroups = { '待訂正': [], '未繳交': [], '缺簽名': [] };
+            const categoryCounts = { '國語': 0, '數學': 0, '聯絡簿': 0, '音樂': 0, '其他': 0 };
+
+            incompleteAssignments.forEach(assignment => {
+                const status = student.statuses[assignment.id];
+                if(status in statusGroups) statusGroups[status].push(assignment);
+                const category = assignment.category || '其他';
+                categoryCounts[category]++;
+            });
+            
+            let summaryText = `共 ${incompleteCount} 項作業尚未完成`;
+            const categoriesWithCounts = CATEGORIES.map(cat => ({ name: cat, count: categoryCounts[cat] }))
+                .filter(c => c.count > 0)
+                .map(c => `${c.name}(${c.count})`)
+                .join('、 ');
+            if (categoriesWithCounts) {
+                summaryText += `： ${categoriesWithCounts}`;
+            }
+
+            let categorizedListHeaderHTML = '';
+            let categorizedListBodyHTML = '';
+            ['待訂正', '未繳交', '缺簽名'].forEach(status => {
+                if (statusGroups[status].length > 0) {
+                    const colorMap = { '待訂正': 'yellow', '未繳交': 'red', '缺簽名': 'purple' };
+                    categorizedListHeaderHTML += `<th class="py-2 px-2 font-semibold text-${colorMap[status]}-600 border-b-2 border-${colorMap[status]}-200">${status} (${statusGroups[status].length})</th>`;
+                    categorizedListBodyHTML += `<td class="p-2 align-top text-gray-700 leading-relaxed">${renderInteractiveList(statusGroups[status], status)}</td>`;
+                }
+            });
+            
+            let categorizedListHTML = `<div class="mb-6">
+                <table class="w-full text-sm border-collapse table-fixed">
+                    <thead class="text-left"><tr>${categorizedListHeaderHTML}</tr></thead>
+                    <tbody><tr>${categorizedListBodyHTML}</tr></tbody>
+                </table>
+            </div>`;
+            
+            if (incompleteCount > 0) {
+                studentStatusSummary.textContent = summaryText;
+                studentStatusSummary.className = 'bg-red-100 border border-red-300 text-red-800 text-center p-3 rounded-md mb-6';
+                studentStatusContent.innerHTML = categorizedListHTML;
+            } else {
+                studentStatusSummary.textContent = '所有作業皆已完成！';
+                studentStatusSummary.className = 'bg-green-100 border border-green-300 text-green-800 text-center p-3 rounded-md mb-6';
+                studentStatusContent.innerHTML = '';
+            }
+            
+            // Render completed section
+            let completedHTML = '';
+            const correctedAssignments = completedAssignments.filter(a => student.statuses[a.id] === '已訂正');
+            const submittedAssignments = completedAssignments.filter(a => student.statuses[a.id] === '已繳交');
+
+            if (correctedAssignments.length > 0) {
+                completedHTML += `<h3 class="text-lg font-semibold text-blue-600 mb-2">已訂正</h3><div>${renderInteractiveList(correctedAssignments, '已訂正')}</div>`;
+            }
+             if (submittedAssignments.length > 0) {
+                completedHTML += `<h3 class="text-lg font-semibold text-green-600 mt-4 mb-2">已繳交</h3><div>${renderInteractiveList(submittedAssignments, '已繳交')}</div>`;
+            }
+            studentStatusCompletedSection.innerHTML = completedHTML;
+
+            studentStatusModal.classList.remove('hidden');
+        }
+        
+        function handleShowGroupStatus(group) {
+            groupView = 'individual'; // Reset view when opening
+            const mainGroup = group ? group[0] : null;
+            if (!mainGroup) return;
+
+            const uniqueMainGroups = [...new Set(appState.students.map(s => s.group ? s.group[0] : null).filter(g => g && g !== '?'))].sort(customGroupSort);
+            
+            groupSelectDropdown.innerHTML = '';
+            uniqueMainGroups.forEach(g => {
+                const option = document.createElement('option');
+                option.value = g;
+                option.textContent = `第 ${g} 組`;
+                groupSelectDropdown.appendChild(option);
+            });
+            groupSelectDropdown.value = mainGroup;
+            
+            renderGroupStatusTable(mainGroup);
+            groupStatusModal.classList.remove('hidden');
+        }
+
+        function renderGroupStatusTable(mainGroup) {
+            if (groupView === 'all') {
+                groupStatusTitle.textContent = '全組作業概況';
+                toggleGroupViewBtn.textContent = '切換為各組檢視';
+                toggleGroupViewBtn.className = 'py-2 px-4 rounded-md text-sm font-semibold bg-purple-500 text-white hover:bg-purple-600';
+                groupSelectDropdown.classList.add('hidden');
+            } else {
+                groupStatusTitle.textContent = '各組作業概況';
+                toggleGroupViewBtn.textContent = '切換為全組概況';
+                toggleGroupViewBtn.className = 'py-2 px-4 rounded-md text-sm font-semibold bg-indigo-500 text-white hover:bg-indigo-600';
+                groupSelectDropdown.classList.remove('hidden');
+            }
+
+            groupStatusContent.innerHTML = '';
+
+            const assignmentsByDate = appState.assignments.reduce((acc, assignment) => {
+                const date = new Date(assignment.date);
+                const dateString = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
+                if (!acc[dateString]) acc[dateString] = [];
+                acc[dateString].push(assignment);
+                return acc;
+            }, {});
+
+            const sortedDates = Object.keys(assignmentsByDate).sort((a, b) => new Date(b) - new Date(a));
+            const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+
+            if (groupView === 'all') {
+                const uniqueMainGroups = [...new Set(appState.students.map(s => s.group ? s.group[0] : null).filter(g => g && g !== '?'))].sort(customGroupSort);
+
+                sortedDates.forEach(dateString => {
+                    const assignmentsForDate = assignmentsByDate[dateString];
+                    const date = new Date(dateString);
+                    const displayDate = `${(date.getMonth() + 1)}/${date.getDate()}(${weekDays[date.getDay()]})`;
+
+                    let tableHeaderHTML = `<thead><tr class="bg-gray-200">
+                        <th class="table-cell font-semibold">作業項目</th>
+                        ${uniqueMainGroups.map(g => `<th class="table-cell font-semibold">第 ${g} 組</th>`).join('')}
+                    </tr></thead>`;
+
+                    let tableBodyHTML = '<tbody>';
+                    assignmentsForDate.forEach(assignment => {
+                        const category = assignment.category || '其他';
+                        const colorClass = CATEGORY_COLORS[category] || '';
+                        tableBodyHTML += `<tr class="border-t ${colorClass}"><td class="table-cell text-left font-semibold">${assignment.name}</td>`;
+                        uniqueMainGroups.forEach(g => {
+                            const groupStudents = appState.students.filter(s => s.group && s.group[0] === g);
+                            if (groupStudents.length === 0) {
+                                tableBodyHTML += `<td class="table-cell">-</td>`;
+                                return;
+                            }
+                            const incompleteStudents = groupStudents.filter(student => {
+                                const status = student.statuses[assignment.id] || '未繳交';
+                                return ['未繳交', '待訂正', '缺簽名'].includes(status);
+                            });
+
+                            if (incompleteStudents.length === 0) {
+                                tableBodyHTML += `<td class="table-cell text-center text-green-600 font-bold">OK</td>`;
+                            } else {
+                                const numbers = incompleteStudents.map(s => s.number).join(',');
+                                tableBodyHTML += `<td class="table-cell text-center text-red-600" title="${incompleteStudents.map(s=>s.name).join(', ')}">${numbers}</td>`;
+                            }
+                        });
+                        tableBodyHTML += '</tr>';
+                    });
+                    tableBodyHTML += '</tbody>';
+                    
+                    const cardHTML = `<div class="bg-white rounded-lg shadow-sm mb-4">
+                        <div class="p-4 border-b bg-gray-50"><h3 class="text-xl font-bold text-indigo-700">${displayDate}</h3></div>
+                        <div class="overflow-x-auto"><table class="w-full text-sm border-collapse">${tableHeaderHTML}${tableBodyHTML}</table></div>
+                    </div>`;
+                    groupStatusContent.innerHTML += cardHTML;
+                });
+
+            } else { // Individual View
+                const groupStudents = appState.students.filter(s => s.group && s.group[0] === mainGroup).sort((a,b) => (a.group.slice(-1)).localeCompare(b.group.slice(-1)));
+                if (groupStudents.length === 0) {
+                    groupStatusContent.innerHTML = `<p class="text-gray-500 text-center">該組別沒有學生。</p>`;
+                    return;
+                };
+
+                sortedDates.forEach(dateString => {
+                    const assignmentsForDate = assignmentsByDate[dateString];
+                    const date = new Date(dateString);
+                    const displayDate = `${(date.getMonth() + 1)}/${date.getDate()}(${weekDays[date.getDay()]})`;
+                    
+                    let hasIncompleteForDate = false;
+                    const incompleteSummary = [];
+
+                    assignmentsForDate.forEach(assignment => {
+                        const incompleteStudents = groupStudents.filter(student => {
+                            const status = student.statuses[assignment.id] || '未繳交';
+                            return ['未繳交', '待訂正', '缺簽名'].includes(status);
+                        });
+                        if (incompleteStudents.length > 0) {
+                            hasIncompleteForDate = true;
+                            const studentNumbers = incompleteStudents.map(s => s.number).join(',');
+                            incompleteSummary.push(`${assignment.name}(${studentNumbers})`);
+                        }
+                    });
+                    
+                    let summaryText = hasIncompleteForDate 
+                        ? incompleteSummary.join('、 ') 
+                        : '<span class="text-green-600 font-semibold">全部完成</span>';
+                    
+                    let tableHTML = `<table class="w-full text-sm border-collapse">
+                                    <thead>
+                                        <tr class="bg-gray-200">
+                                            <th class="table-cell font-semibold">作業項目</th>
+                                            ${groupStudents.map(s => `<th class="table-cell font-semibold">${s.group}<br>${s.name}</th>`).join('')}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${assignmentsForDate.map(assignment => {
+                                            const category = assignment.category || '其他';
+                                            const colorClass = CATEGORY_COLORS[category] || '';
+                                            return `<tr class="border-t ${colorClass}">
+                                                <td class="table-cell text-left">
+                                                    <button class="font-semibold text-blue-600 hover:underline" data-assignment-id="${assignment.id}" data-group="${mainGroup}">${assignment.name}</button>
+                                                </td>
+                                                ${groupStudents.map(student => {
+                                                    const status = student.statuses[assignment.id] || '未繳交';
+                                                    const studentIndex = appState.students.findIndex(s => s.id === student.id);
+                                                    const assignmentIndex = appState.assignments.findIndex(a => a.id === assignment.id);
+                                                    return `<td class="table-cell">
+                                                        <button class="status-btn w-auto px-2 py-1 text-xs ${STATUS_COLORS[status]}" data-student-index="${studentIndex}" data-assignment-index="${assignmentIndex}">${status}</button>
+                                                    </td>`;
+                                                }).join('')}
+                                            </tr>`;
+                                        }).join('')}
+                                    </tbody>
+                                </table>`;
+
+                    let cardHTML = `
+                    <div class="bg-gray-100 rounded-lg shadow-sm mb-4">
+                        <div class="w-full text-left p-4 border-b">
+                            <h3 class="text-lg font-bold text-indigo-700 flex-shrink-0">${displayDate}</h3>
+                            <div class="text-sm text-gray-600 text-left mt-1">${summaryText}</div>
+                        </div>
+                        <div class="px-4 pb-4 overflow-x-auto">
+                           ${tableHTML}
+                        </div>
+                    </div>`;
+                    groupStatusContent.innerHTML += cardHTML;
+                });
+            }
+        }
+
+        function handleShowBatchInput(assignmentIndex) {
+            const assignment = appState.assignments[assignmentIndex];
+            batchInputTitle.textContent = `批次輸入：${assignment.name}`;
+            correctedInput.value = '';
+            needsCorrectionInput.value = '';
+            notSubmittedInput.value = '';
+            missingSignatureInput.value = '';
+            batchInputModal.dataset.assignmentIndex = assignmentIndex;
+            batchInputModal.classList.remove('hidden');
+        }
+
+        function handleProcessBatchInput() {
+            const assignmentIndex = parseInt(batchInputModal.dataset.assignmentIndex, 10);
+            if (isNaN(assignmentIndex)) return;
+            const assignmentId = appState.assignments[assignmentIndex].id;
+
+            const inputs = {
+                '已訂正': correctedInput.value,
+                '待訂正': needsCorrectionInput.value,
+                '未繳交': notSubmittedInput.value,
+                '缺簽名': missingSignatureInput.value,
+            };
+
+            for (const status in inputs) {
+                const numbers = (inputs[status].match(/\d+/g) || []);
+                numbers.forEach(numStr => {
+                    const student = appState.students.find(s => s.number === numStr);
+                    if (student) {
+                        student.statuses[assignmentId] = status;
+                    }
+                });
+            }
+
+            updateStateAndSave();
+            renderTable();
+            closeModal(batchInputModal);
+        }
+
+        function handleDownloadCsvTemplate() {
+            const headers = ['座號', '姓名', '組別'];
+            const exampleRow1 = ['1', '王小明', '1A'];
+            const exampleRow2 = ['2', '陳大華', '1B'];
+            let csvContent = "\uFEFF"; // BOM for UTF-8 for Excel compatibility
+            csvContent += headers.join(',') + '\r\n';
+            csvContent += exampleRow1.join(',') + '\r\n';
+            csvContent += exampleRow2.join(',') + '\r\n';
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "學生名單範本.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function handleExportCSV() {
+            if (appState.students.length === 0) { alert("沒有資料可以匯出。"); return; }
+            const headers = ['座號', '姓名', '組別', ...appState.assignments.map(a => a.name)];
+            const dates = ['', '', '', ...appState.assignments.map(a => a.date)];
+            const categories = ['', '', '', ...appState.assignments.map(a => a.category || '其他')];
+            const rows = appState.students.map(student => {
+                const studentRow = [student.number, student.name, student.group];
+                appState.assignments.forEach(assignment => { studentRow.push(student.statuses[assignment.id] || '未繳交'); });
+                return studentRow;
+            });
+            let csvContent = "\uFEFF"; // BOM for UTF-8
+            csvContent += headers.join(',') + '\r\n';
+            csvContent += dates.join(',') + '\r\n';
+            csvContent += categories.join(',') + '\r\n';
+            rows.forEach(rowArray => { csvContent += rowArray.join(',') + '\r\n'; });
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "作業清點資料.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function handleImportCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.trim().split(/\r\n|\n/).filter(line => line.trim() !== '');
+                if (lines.length < 1) { alert("CSV 檔案是空的。"); return; }
+                
+                const headers = lines[0].split(',').map(h => h.trim());
+
+                if (headers.length === 3 && headers.includes('座號') && headers.includes('姓名') && headers.includes('組別')) {
+                    confirmModalText.textContent = '偵測到學生名單檔案。這將會覆蓋現有的學生名單並重設作業，確定要匯入嗎？';
+                    confirmModal.classList.remove('hidden');
+                    confirmDeleteBtn.onclick = () => {
+                        try {
+                            const studentLines = lines.slice(1);
+                            const newStudents = studentLines.map((line, index) => {
+                                const values = line.split(',');
+                                return { id: index, number: values[0]?.trim() || '?', name: values[1]?.trim() || '未命名', group: values[2]?.trim() || '?', statuses: {} };
+                            });
+                            if (newStudents.length === 0) {
+                                alert("CSV檔案中沒有找到學生資料。");
+                                return;
+                            }
+                            appState.students = newStudents;
+                            appState.assignments = [];
+                            appState.sheetUrl = sheetUrlInput.value.trim();
+                            history = [];
+                            historyIndex = -1;
+                            updateStateAndSave();
+                            setupSection.classList.add('hidden');
+                            mainSection.classList.remove('hidden');
+                            updateOpenSheetBtnState();
+                            renderTable();
+                            alert("學生名單匯入成功！");
+                        } catch (error) {
+                            alert("讀取學生名單時發生錯誤。");
+                            console.error(error);
+                        } finally {
+                            confirmModal.classList.add('hidden');
+                            csvFileInput.value = '';
+                        }
+                    };
+                } else {
+                    if (lines.length < 4) { alert("完整資料備份的 CSV 檔案格式不正確 (至少需要四行)。"); return; }
+                    confirmModalText.textContent = '匯入完整備份將會覆蓋所有現有資料，確定要繼續嗎？';
+                    confirmModal.classList.remove('hidden');
+                    confirmDeleteBtn.onclick = () => {
+                        try {
+                            lines.shift();
+                            const dates = lines.shift().split(',');
+                            const categories = lines.shift().split(',');
+                            const newAssignments = headers.slice(3).map((name, index) => ({ 
+                                id: Date.now() + Math.random() + index,
+                                name: name.trim(), 
+                                date: dates[index + 3]?.trim() || new Date().toISOString(),
+                                category: categories[index + 3]?.trim() || autoCategorize(name.trim())
+                            }));
+                            const studentLines = lines;
+                            const newStudents = studentLines.map((line, index) => {
+                                const values = line.split(',');
+                                const statuses = {};
+                                newAssignments.forEach((assignment, i) => {
+                                    const status = values[i + 3]?.trim();
+                                    if (STATUSES.includes(status)) { statuses[assignment.id] = status; }
+                                });
+                                return { id: index, number: values[0]?.trim(), name: values[1]?.trim(), group: values[2]?.trim(), statuses: statuses };
+                            });
+                            appState.students = newStudents;
+                            appState.assignments = newAssignments;
+                            appState.sheetUrl = sheetUrlInput.value.trim();
+                            history = [];
+                            historyIndex = -1;
+                            updateStateAndSave();
+                            setupSection.classList.add('hidden');
+                            mainSection.classList.remove('hidden');
+                            updateOpenSheetBtnState();
+                            renderTable();
+                            alert("資料還原成功！");
+                        } catch (error) {
+                            alert("讀取備份檔案時發生錯誤，請檢查檔案格式是否正確。");
+                            console.error(error);
+                        } finally {
+                            confirmModal.classList.add('hidden');
+                            csvFileInput.value = '';
+                        }
+                    };
+                }
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+        
+        function updateStatusAndRefresh(assignmentIds, newStatus, studentIndex) {
+            const student = appState.students[studentIndex];
+            assignmentIds.forEach(id => {
+                const assignment = appState.assignments.find(a => a.id == id);
+                if(assignment) student.statuses[assignment.id] = newStatus;
+            });
+            updateStateAndSave();
+            renderTable();
+            handleShowStudentStatus(studentIndex);
+            closeModal(choiceModal);
+        }
+
+        function showChoiceModal(choices, assignmentIds, studentIndex) {
+            choiceModalButtons.innerHTML = '';
+            choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.textContent = choice;
+                button.className = `py-2 px-4 rounded-md font-semibold ${STATUS_COLORS[choice] || 'bg-gray-500'}`;
+                button.onclick = () => updateStatusAndRefresh(assignmentIds, choice, studentIndex);
+                choiceModalButtons.appendChild(button);
+            });
+            choiceModal.classList.remove('hidden');
+        }
+
+        function handleInteractiveStatusChange(event) {
+            const button = event.target.closest('.interactive-status-item');
+            if (!button) return;
+
+            const studentIndex = parseInt(studentStatusModal.dataset.studentIndex, 10);
+            const assignmentIds = button.dataset.assignmentIds.split(',');
+            const currentStatus = button.dataset.currentStatus;
+
+            if (currentStatus === '未繳交') {
+                showChoiceModal(['待訂正', '已繳交'], assignmentIds, studentIndex);
+                return;
+            }
+            if (currentStatus === '已繳交') {
+                showChoiceModal(['未繳交', '待訂正', '缺簽名'], assignmentIds, studentIndex);
+                return;
+            }
+            if (currentStatus === '待訂正') {
+                showChoiceModal(['已訂正', '缺簽名'], assignmentIds, studentIndex);
+                return;
+            }
+            if (currentStatus === '已訂正') {
+                showChoiceModal(['待訂正', '缺簽名'], assignmentIds, studentIndex);
+                return;
+            }
+
+            const nextStatusMap = {
+                '缺簽名': '已繳交',
+            };
+
+            const nextStatus = nextStatusMap[currentStatus];
+            if (!nextStatus) return;
+            
+            updateStatusAndRefresh(assignmentIds, nextStatus, studentIndex);
+        }
+        
+        function handleOneClickComplete() {
+            const studentIndex = parseInt(studentStatusModal.dataset.studentIndex, 10);
+            const student = appState.students[studentIndex];
+            if (!student) return;
+            
+            appState.assignments.forEach(assignment => {
+                const currentStatus = student.statuses[assignment.id] || '未繳交';
+                if (currentStatus === '待訂正') {
+                    student.statuses[assignment.id] = '已訂正';
+                } else if (currentStatus === '未繳交' || currentStatus === '缺簽名') {
+                    student.statuses[assignment.id] = '已繳交';
+                }
+            });
+
+            updateStateAndSave();
+            renderTable();
+            handleShowStudentStatus(studentIndex);
+        }
+
+        function navigateStudent(direction) {
+            let currentIndex = parseInt(studentStatusModal.dataset.studentIndex, 10);
+            const studentCount = appState.students.length;
+            let newIndex = (currentIndex + direction + studentCount) % studentCount;
+            handleShowStudentStatus(newIndex);
+        }
+        
+        function handleUndo() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                appState = JSON.parse(history[historyIndex]);
+                saveData(); // Save the restored state to localStorage
+                renderTable();
+                updateHistoryButtonsState();
+
+                if (!studentStatusModal.classList.contains('hidden')) {
+                    const studentIndex = parseInt(studentStatusModal.dataset.studentIndex, 10);
+                    if (!isNaN(studentIndex)) {
+                        handleShowStudentStatus(studentIndex);
+                    }
+                }
+            }
+        }
+        
+        function handleRedo() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                appState = JSON.parse(history[historyIndex]);
+                saveData();
+                renderTable();
+                updateHistoryButtonsState();
+                
+                if (!studentStatusModal.classList.contains('hidden')) {
+                    const studentIndex = parseInt(studentStatusModal.dataset.studentIndex, 10);
+                    if (!isNaN(studentIndex)) {
+                        handleShowStudentStatus(studentIndex);
+                    }
+                }
+            }
+        }
+
+        function handleSortToggle() {
+            if (sortBy === 'number') {
+                sortBy = 'group';
+                sortBtn.textContent = '依座號排列';
+            } else {
+                sortBy = 'number';
+                sortBtn.textContent = '依組別排列';
+            }
+            renderTable();
+        }
+
+
+        function toggleCollapsible(content, button) {
+            const icon = button.querySelector('svg');
+            if (content.style.maxHeight && content.style.maxHeight !== '0px') {
+                content.style.maxHeight = '0px';
+                icon?.classList.remove('rotate-180');
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+                icon?.classList.add('rotate-180');
+            }
+        }
+
+        function handleToggleAll(expand, container) {
+            container.querySelectorAll('.collapsible-content').forEach(content => {
+                const button = container.querySelector(`[data-toggle-id="${content.id}"]`);
+                const icon = button?.querySelector('svg');
+                if (expand) {
+                    if (button && !button.disabled) {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                        icon?.classList.add('rotate-180');
+                    }
+                } else {
+                    content.style.maxHeight = '0px';
+                    icon?.classList.remove('rotate-180');
+                }
+            });
+        }
+        
+        function handleGroupTableClick(event) {
+            const studentBtn = event.target.closest('button[data-student-index]');
+            const assignmentBtn = event.target.closest('button[data-assignment-id][data-group]');
+
+            if (studentBtn) {
+                const studentIndex = parseInt(studentBtn.dataset.studentIndex, 10);
+                const assignmentIndex = parseInt(studentBtn.dataset.assignmentIndex, 10);
+                handleStatusChange(studentIndex, assignmentIndex);
+                renderGroupStatusTable(groupSelectDropdown.value);
+            } else if (assignmentBtn) {
+                const assignmentId = assignmentBtn.dataset.assignmentId;
+                const mainGroup = assignmentBtn.dataset.group;
+                const groupStudents = appState.students.filter(s => s.group && s.group[0] === mainGroup);
+                
+                const HEADER_STATUSES = ['已繳交', '待訂正', '已訂正', '缺簽名', '未繳交'];
+                const firstStatus = groupStudents[0]?.statuses[assignmentId] || '未繳交';
+                const allSame = groupStudents.every(s => (s.statuses[assignmentId] || '未繳交') === firstStatus);
+                
+                let nextStatus = HEADER_STATUSES[0];
+                if (allSame) {
+                    const currentIndex = HEADER_STATUSES.indexOf(firstStatus);
+                    nextStatus = HEADER_STATUSES[currentIndex === -1 || currentIndex === HEADER_STATUSES.length - 1 ? 0 : currentIndex + 1];
+                }
+                
+                groupStudents.forEach(student => {
+                    student.statuses[assignmentId] = nextStatus;
+                });
+                
+                updateStateAndSave();
+                renderGroupStatusTable(mainGroup);
+                renderTable();
+            }
+        }
+
+        // --- Init & Event Listeners ---
+        function closeModal(modal) { modal.classList.add('hidden'); }
+        
+        const eventMap = {
+            'start-btn': handleStart,
+            'add-assignment-btn': handleAddAssignment,
+            'reset-btn': handleReset,
+            'show-status-btn': handleShowStatus,
+            'export-csv-btn': handleExportCSV,
+            'import-csv-btn': () => csvFileInput.click(),
+            'download-csv-template-btn': handleDownloadCsvTemplate,
+            'close-status-modal-btn': () => closeModal(statusModal),
+            'close-student-status-modal-btn': () => closeModal(studentStatusModal),
+            'close-group-status-modal-btn': () => closeModal(groupStatusModal),
+            'cancel-delete-btn': () => closeModal(confirmModal),
+            'cancel-choice-btn': () => closeModal(choiceModal),
+            'refresh-status-btn': handleShowStatus,
+            'refresh-student-status-btn': () => {
+                const index = studentStatusModal.dataset.studentIndex;
+                if (index !== undefined) { handleShowStudentStatus(parseInt(index, 10)); }
+            },
+            'toggle-names-btn': () => {
+                statusModalShowNames = !statusModalShowNames;
+                handleShowStatus();
+            },
+            'confirm-batch-input-btn': handleProcessBatchInput,
+            'cancel-batch-input-btn': () => closeModal(batchInputModal),
+            'expand-all-btn': () => handleToggleAll(true, statusContent),
+            'collapse-all-btn': () => handleToggleAll(false, statusContent),
+            'one-click-complete-btn': handleOneClickComplete,
+            'prev-student-btn': () => navigateStudent(-1),
+            'next-student-btn': () => navigateStudent(1),
+            'undo-btn': handleUndo,
+            'redo-btn': handleRedo,
+            'undo-student-btn': handleUndo,
+            'redo-student-btn': handleRedo,
+            'sort-btn': handleSortToggle,
+        };
+
+        for (const id in eventMap) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('click', eventMap[id]);
+            }
+        }
+        
+        toggleGroupViewBtn.addEventListener('click', () => {
+            groupView = groupView === 'individual' ? 'all' : 'individual';
+            renderGroupStatusTable(groupSelectDropdown.value);
+        });
+
+        csvFileInput.addEventListener('change', handleImportCSV);
+        studentStatusModal.addEventListener('click', handleInteractiveStatusChange);
+        studentSelectDropdown.addEventListener('change', (e) => handleShowStudentStatus(parseInt(e.target.value, 10)));
+        groupSelectDropdown.addEventListener('change', (e) => renderGroupStatusTable(e.target.value));
+        statusContent.addEventListener('click', (e) => {
+            const button = e.target.closest('[data-toggle-id]');
+            if(button) {
+                const content = document.getElementById(button.dataset.toggleId);
+                if (content) toggleCollapsible(content, button);
+            }
+        });
+        groupStatusContent.addEventListener('click', handleGroupTableClick);
+        [statusModal, studentStatusModal, confirmModal, batchInputModal, choiceModal, groupStatusModal].forEach(modal => modal.addEventListener('click', e => e.target === modal && closeModal(modal)));
+        
+        loadData();
+    </script>
+</body>
+</html>
+
