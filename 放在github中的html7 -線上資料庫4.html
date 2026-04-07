@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>作業清點小幫手v7.4</title>
+    <title>作業清點小幫手v7.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
@@ -182,7 +182,7 @@
 
     <div id="app-container" class="container mx-auto p-4 md:p-8 max-w-7xl">
         <div class="flex justify-center items-center mb-6 relative">
-            <h1 class="text-3xl font-bold text-center text-gray-800">作業清點小幫手v7.4</h1>
+            <h1 class="text-3xl font-bold text-center text-gray-800">作業清點小幫手v7.5</h1>
             <span id="sync-status" class="absolute left-0 text-xs font-medium text-gray-400"></span>
             <button id="show-manual-btn" class="absolute right-0 bg-gray-200 text-gray-700 text-xs font-semibold py-1 px-3 rounded-full hover:bg-gray-300">使用說明</button>
         </div>
@@ -899,7 +899,7 @@
 
     <script type="module">
         // --- App State ---
-        const GAS_PROXY_URL = 'https://script.google.com/macros/s/AKfycbxKf9WA4VwABESO_AaCERGD1kXnvAm7PJorYdYRGDjOTWS4DIX79gS39V_XUkYcJ3Nj/exec';
+        const GAS_PROXY_URL = 'https://script.google.com/macros/s/AKfycbxtXyO4R0jHuwrXyVfsFtE-uTH2_6cs7MDKjSrBP5kSSMey-eOAU2OBe9NpuXGe2-oi/exec';
         let appState = { students: [], assignments: [], sheetUrl: '', gasUrl: GAS_PROXY_URL, semesterStartDate: '2026-02-23', semesterEndWeek: 21 };
         let history = [];
         let historyIndex = -1;
