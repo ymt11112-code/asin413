@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>課程計畫網頁化完整流程指引</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        code { background: #f1f5f9; padding: 1px 5px; border-radius: 4px; font-size: 0.85em; color: #1e3a8a; }
+        .step-header { transition: background 0.2s; }
+        details > summary { cursor: pointer; user-select: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        details > summary::before { content: '▶ '; font-size: 0.7em; }
+        details[open] > summary::before { content: '▼ '; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-800 to-blue-600 text-white shadow-lg">
+        <div class="max-w-3xl mx-auto px-6 py-8">
+            <h1 class="text-2xl font-bold">📋 課程計畫網頁化完整流程指引</h1>
+            <p class="mt-1 text-blue-200 text-sm">從 Word 轉換到 GitHub Pages 線上發佈，四個步驟全說明</p>
+        </div>
+    </header>
+
+    <!-- Flow overview -->
+    <div class="max-w-3xl mx-auto px-6 py-6">
+        <div class="flex items-center justify-between text-sm font-medium text-center gap-1">
+            <div class="flex-1 bg-blue-600 text-white rounded-lg py-2 px-1 shadow">
+                <div class="text-xl mb-0.5">🔧</div>
+                <div>轉換工具<br>美化 HTML</div>
+            </div>
+            <div class="text-gray-400 font-bold text-lg">›</div>
+            <div class="flex-1 bg-indigo-600 text-white rounded-lg py-2 px-1 shadow">
+                <div class="text-xl mb-0.5">📁</div>
+                <div>準備<br>所有檔案</div>
+            </div>
+            <div class="text-gray-400 font-bold text-lg">›</div>
+            <div class="flex-1 bg-violet-600 text-white rounded-lg py-2 px-1 shadow">
+                <div class="text-xl mb-0.5">☁️</div>
+                <div>上傳<br>GitHub</div>
+            </div>
+            <div class="text-gray-400 font-bold text-lg">›</div>
+            <div class="flex-1 bg-green-600 text-white rounded-lg py-2 px-1 shadow">
+                <div class="text-xl mb-0.5">🌐</div>
+                <div>取得<br>網址瀏覽</div>
+            </div>
+        </div>
+    </div>
+
+    <main class="max-w-3xl mx-auto px-6 pb-12 space-y-6">
+
+        <!-- ========== STEP 1 ========== -->
+        <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-blue-600 text-white px-6 py-4 flex items-center gap-3">
+                <span class="w-9 h-9 bg-white text-blue-600 rounded-full flex items-center justify-center font-bold shrink-0 text-lg">1</span>
+                <div>
+                    <h2 class="font-bold text-lg">使用轉換工具美化課程計畫</h2>
+                    <p class="text-blue-200 text-xs">將 Word 匯出的 .htm 轉為美化後的 HTML</p>
+                </div>
+            </div>
+            <div class="px-6 py-5 space-y-4">
+                <a href="課程計畫讀取(子資料夾).html" target="_blank"
+                   class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-lg shadow transition text-sm">
+                    ↗ 開啟轉換工具
+                </a>
+
+                <ol class="space-y-2.5 text-sm text-gray-700">
+                    <li class="flex gap-3 items-start">
+                        <span class="shrink-0 w-6 h-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-xs">①</span>
+                        <span>開啟工具後，<strong>「設定基礎網址」欄位請保持空白</strong>，這樣連結才能以相對路徑指向 GitHub 上的子資料夾。</span>
+                    </li>
+                    <li class="flex gap-3 items-start">
+                        <span class="shrink-0 w-6 h-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-xs">②</span>
+                        <span>點擊「選擇檔案」，上傳從 Word「另存為 → 篩選網頁 (*.htm)」所產生的 <code>.htm</code> 檔案。</span>
+                    </li>
+                    <li class="flex gap-3 items-start">
+                        <span class="shrink-0 w-6 h-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-xs">③</span>
+                        <span>選擇美化風格（推薦「專業藍」），填入或修改網頁標題後，點擊「套用並顯示」。</span>
+                    </li>
+                    <li class="flex gap-3 items-start">
+                        <span class="shrink-0 w-6 h-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-xs">④</span>
+                        <span>預覽正確後，視需要用 <strong>A－ / A＋</strong> 調整標題與內文字型大小。</span>
+                    </li>
+                    <li class="flex gap-3 items-start">
+                        <span class="shrink-0 w-6 h-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-xs">⑤</span>
+                        <span>點擊「💾 下載處理後的網頁」，儲存 <code>調整後的課程計畫首頁.html</code> 到電腦中，備用。</span>
+                    </li>
+                </ol>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+                    ⚠️ <strong>重要：</strong>「設定基礎網址」請<strong>保留空白不填</strong>。若填入網址，連結會被轉換為 Google Apps Script 格式，而非相對路徑，導致 GitHub Pages 上連結失效。
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== STEP 2 ========== -->
+        <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-indigo-600 text-white px-6 py-4 flex items-center gap-3">
+                <span class="w-9 h-9 bg-white text-indigo-600 rounded-full flex items-center justify-center font-bold shrink-0 text-lg">2</span>
+                <div>
+                    <h2 class="font-bold text-lg">整理所有要上傳的檔案</h2>
+                    <p class="text-indigo-200 text-xs">確認主頁 HTML 與各科資料夾都已備齊</p>
+                </div>
+            </div>
+            <div class="px-6 py-5 space-y-4 text-sm text-gray-700">
+                <p>請將以下所有項目放在<strong>同一個父資料夾</strong>中，方便一次選取上傳：</p>
+
+                <ul class="space-y-2">
+                    <li class="flex items-start gap-2">
+                        <span class="text-green-600 shrink-0 mt-0.5">✅</span>
+                        <span><strong>主要首頁 HTML</strong>：步驟 1 下載的 <code>調整後的課程計畫首頁.html</code></span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-green-600 shrink-0 mt-0.5">✅</span>
+                        <span><strong>各科課程計畫資料夾</strong>：Word 另存網頁時同時產生的資料夾（內含各科目 .html 及圖片等）。資料夾名稱必須與主頁中的超連結路徑完全一致。</span>
+                    </li>
+                </ul>
+
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 font-mono text-xs text-gray-600 leading-relaxed">
+                    <div class="font-bold text-gray-700 mb-1 font-sans">建議的資料夾結構：</div>
+                    📁 上傳資料夾（自訂名稱）<br>
+                    &nbsp;&nbsp;├── 📄 調整後的課程計畫首頁.html<br>
+                    &nbsp;&nbsp;├── 📁 國語/<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── 114國語課程計畫.html<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── 114國語課程計畫_files/<br>
+                    &nbsp;&nbsp;├── 📁 數學/<br>
+                    &nbsp;&nbsp;├── 📁 自然/<br>
+                    &nbsp;&nbsp;└── 📁 ...（其他科目）
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                    💡 <strong>提示：</strong>步驟 3 上傳時，選擇這個「上傳資料夾」即可一次完成，系統會自動保留所有子資料夾結構。
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== STEP 3 ========== -->
+        <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-violet-600 text-white px-6 py-4 flex items-center gap-3">
+                <span class="w-9 h-9 bg-white text-violet-600 rounded-full flex items-center justify-center font-bold shrink-0 text-lg">3</span>
+                <div>
+                    <h2 class="font-bold text-lg">上傳至 GitHub 並自動發佈</h2>
+                    <p class="text-violet-200 text-xs">填入 Token、選擇倉庫、選取檔案，一鍵完成</p>
+                </div>
+            </div>
+            <div class="px-6 py-5 space-y-5">
+
+                <!-- 3-A: Token -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1.5">
+                        GitHub Personal Access Token (PAT)
+                    </label>
+                    <div class="flex gap-2">
+                        <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                               class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-violet-500 focus:border-violet-500">
+                        <button id="validateTokenBtn"
+                                class="bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold px-4 py-2 rounded-md transition whitespace-nowrap">
+                            驗證帳號
+                        </button>
+                    </div>
+                    <p id="tokenStatus" class="mt-1.5 text-xs hidden"></p>
+
+                    <details class="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                        <summary class="text-xs font-bold text-gray-600 hover:text-gray-800">如何取得 GitHub Personal Access Token？</summary>
+                        <ol class="mt-3 space-y-1.5 text-xs text-gray-600 list-decimal pl-4">
+                            <li>登入 <strong>GitHub</strong>，點右上角頭像 → <strong>Settings</strong></li>
+                            <li>左側最下方點 <strong>Developer settings</strong></li>
+                            <li>選 <strong>Personal access tokens → Tokens (classic)</strong></li>
+                            <li>點 <strong>Generate new token (classic)</strong></li>
+                            <li><strong>Note</strong> 欄輸入名稱（如：課程計畫上傳），<strong>Expiration</strong> 選擇有效期</li>
+                            <li>勾選 <strong><code>repo</code></strong> 範圍（其下所有子項會自動勾選）</li>
+                            <li>點 <strong>Generate token</strong> 並立即複製（只顯示一次！）</li>
+                            <li>貼到上方輸入欄，點「驗證帳號」</li>
+                        </ol>
+                        <div class="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+                            ⚠️ Token 等同密碼，請勿分享給他人。用完後可到 GitHub 設定頁面刪除。
+                        </div>
+                    </details>
+                </div>
+
+                <!-- 3-B: Repo selection (hidden until token validated) -->
+                <div id="repoSection" class="hidden space-y-4 pt-2 border-t border-gray-100">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">選擇倉庫</label>
+                        <div class="flex gap-6">
+                            <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                <input type="radio" name="repoMode" value="new" checked class="accent-violet-600">
+                                <span>新建倉庫</span>
+                            </label>
+                            <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                <input type="radio" name="repoMode" value="existing" class="accent-violet-600">
+                                <span>使用現有倉庫</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- New repo inputs -->
+                    <div id="newRepoPanel" class="space-y-2">
+                        <input type="text" id="newRepoName" placeholder="倉庫名稱（英文、數字、連字號，例如：school-curriculum-114）"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-violet-500 focus:border-violet-500">
+                        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                            <input type="checkbox" id="repoPublic" checked class="accent-violet-600">
+                            <span>設為公開倉庫（GitHub Pages <strong>免費方案須為公開</strong>才能啟用）</span>
+                        </label>
+                    </div>
+
+                    <!-- Existing repo select -->
+                    <div id="existingRepoPanel" class="hidden">
+                        <select id="existingRepoSelect"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-violet-500 focus:border-violet-500">
+                            <option value="">--- 載入中，請稍候 ---</option>
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">注意：上傳至現有倉庫，同名檔案會被覆蓋更新。</p>
+                    </div>
+                </div>
+
+                <!-- 3-C: File Upload -->
+                <div id="fileSection" class="hidden space-y-4 pt-2 border-t border-gray-100">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1.5">
+                            選擇包含所有檔案的上傳資料夾
+                        </label>
+                        <input type="file" id="uploadFolderInput" webkitdirectory multiple
+                               class="block w-full text-sm text-gray-500
+                                      file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0
+                                      file:text-sm file:font-bold file:bg-violet-600 file:text-white
+                                      hover:file:bg-violet-700 cursor-pointer">
+                        <p class="mt-1 text-xs text-gray-500">
+                            點擊後選取「步驟 2 整理好的上傳資料夾」，系統會自動讀取資料夾內所有檔案（含子資料夾）。
+                        </p>
+                        <p id="fileCount" class="mt-1 text-xs text-violet-700 font-medium hidden"></p>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
+                        💡 上傳時會保留完整資料夾結構，主頁 HTML 與各科資料夾都會放在倉庫根目錄，連結即可正常運作。
+                    </div>
+
+                    <!-- Rename option -->
+                    <label class="flex items-start gap-2 text-sm text-gray-700 cursor-pointer">
+                        <input type="checkbox" id="renameToIndex" class="accent-violet-600 mt-0.5">
+                        <span>將 <code>調整後的課程計畫首頁.html</code> 重新命名為 <code>index.html</code>（網址更簡潔，推薦勾選）</span>
+                    </label>
+                </div>
+
+                <!-- 3-D: Upload Button + Progress -->
+                <div id="uploadSection" class="hidden pt-2 border-t border-gray-100 space-y-3">
+                    <button id="uploadBtn"
+                            class="w-full bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white font-bold py-3 px-6 rounded-lg shadow transition text-sm">
+                        🚀 開始上傳至 GitHub
+                    </button>
+
+                    <div id="progressArea" class="hidden space-y-2">
+                        <div class="flex justify-between text-xs text-gray-600">
+                            <span id="progressText">準備中...</span>
+                            <span id="progressCount">0 / 0</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div id="progressBar" class="bg-violet-600 h-2.5 rounded-full transition-all duration-300" style="width:0%"></div>
+                        </div>
+                        <div id="progressLog"
+                             class="mt-1 max-h-40 overflow-y-auto text-xs space-y-0.5 bg-gray-50 border border-gray-200 rounded p-2 font-mono">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========== STEP 4 ========== -->
+        <section id="step4" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hidden">
+            <div class="bg-green-600 text-white px-6 py-4 flex items-center gap-3">
+                <span class="w-9 h-9 bg-white text-green-600 rounded-full flex items-center justify-center font-bold shrink-0 text-lg">4</span>
+                <div>
+                    <h2 class="font-bold text-lg">🎉 完成！課程計畫已上線</h2>
+                    <p class="text-green-200 text-xs">GitHub Pages 部署通常需要 1～3 分鐘，請稍後再開啟網址</p>
+                </div>
+            </div>
+            <div class="px-6 py-5 space-y-4">
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <p class="text-xs text-gray-500 mb-1 font-medium">課程計畫網址：</p>
+                    <a id="pagesUrl" href="#" target="_blank"
+                       class="text-blue-600 hover:underline font-mono text-sm break-all"></a>
+                </div>
+
+                <div class="text-sm text-gray-700 space-y-2">
+                    <p class="font-bold">接下來可做的事：</p>
+                    <ul class="space-y-1.5 pl-4">
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600 shrink-0">✅</span>
+                            <span>等待約 1～3 分鐘後，點擊上方網址確認課程計畫正常顯示。</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-600 shrink-0">✅</span>
+                            <span>確認各科連結可正常開啟子頁面。</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-500 shrink-0">📌</span>
+                            <span>將網址分享給需要瀏覽的人員，或複製網址貼到學校網站。</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-500 shrink-0">🔄</span>
+                            <span>日後若需更新課程計畫，重新執行步驟 1～3，覆蓋上傳即可。</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+                    ⚠️ <strong>若網址顯示 404：</strong>請至 GitHub 倉庫 → Settings → Pages，確認 Source 設定為 <code>main</code> 分支、根目錄 <code>/</code>，儲存後再等 1～2 分鐘。
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        let githubToken = null;
+        let githubUser = null;
+
+        // ---- Token validation ----
+        document.getElementById('validateTokenBtn').addEventListener('click', async () => {
+            const token = document.getElementById('ghToken').value.trim();
+            if (!token) { alert('請輸入 GitHub Token'); return; }
+
+            const statusEl = document.getElementById('tokenStatus');
+            statusEl.textContent = '驗證中...';
+            statusEl.className = 'mt-1.5 text-xs text-gray-500';
+            statusEl.classList.remove('hidden');
+
+            try {
+                const res = await fetch('https://api.github.com/user', {
+                    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github+json' }
+                });
+                if (!res.ok) throw new Error('無效');
+                const user = await res.json();
+                githubToken = token;
+                githubUser = user.login;
+
+                statusEl.textContent = `✅ 驗證成功！已登入為 ${user.login} (${user.name || ''})`;
+                statusEl.className = 'mt-1.5 text-xs text-green-600 font-medium';
+
+                document.getElementById('repoSection').classList.remove('hidden');
+                document.getElementById('fileSection').classList.remove('hidden');
+                document.getElementById('uploadSection').classList.remove('hidden');
+
+                loadExistingRepos(token);
+            } catch (e) {
+                statusEl.textContent = '❌ Token 無效或已過期，請重新申請。';
+                statusEl.className = 'mt-1.5 text-xs text-red-600';
+            }
+        });
+
+        // ---- Load existing repos ----
+        async function loadExistingRepos(token) {
+            const select = document.getElementById('existingRepoSelect');
+            select.innerHTML = '<option value="">--- 載入中... ---</option>';
+            try {
+                const res = await fetch('https://api.github.com/user/repos?per_page=100&sort=updated', {
+                    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github+json' }
+                });
+                const repos = await res.json();
+                select.innerHTML = '<option value="">--- 請選擇倉庫 ---</option>';
+                repos.forEach(repo => {
+                    const opt = document.createElement('option');
+                    opt.value = repo.name;
+                    opt.textContent = `${repo.name}  ${repo.private ? '🔒 私人' : '🌐 公開'}`;
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                select.innerHTML = '<option value="">（載入失敗，請重試）</option>';
+            }
+        }
+
+        // ---- Toggle repo mode ----
+        document.querySelectorAll('input[name="repoMode"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                const mode = document.querySelector('input[name="repoMode"]:checked').value;
+                document.getElementById('newRepoPanel').classList.toggle('hidden', mode !== 'new');
+                document.getElementById('existingRepoPanel').classList.toggle('hidden', mode !== 'existing');
+            });
+        });
+
+        // ---- Show file count ----
+        document.getElementById('uploadFolderInput').addEventListener('change', function () {
+            const el = document.getElementById('fileCount');
+            if (this.files.length > 0) {
+                el.textContent = `已選取 ${this.files.length} 個檔案`;
+                el.classList.remove('hidden');
+            } else {
+                el.classList.add('hidden');
+            }
+        });
+
+        // ---- Helpers ----
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const bytes = new Uint8Array(e.target.result);
+                    let binary = '';
+                    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+                    resolve(btoa(binary));
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        function encodePath(path) {
+            return path.split('/').map(encodeURIComponent).join('/');
+        }
+
+        async function ghRequest(method, apiPath, body = null) {
+            const opts = {
+                method,
+                headers: {
+                    'Authorization': `token ${githubToken}`,
+                    'Accept': 'application/vnd.github+json',
+                    'Content-Type': 'application/json'
+                }
+            };
+            if (body) opts.body = JSON.stringify(body);
+            const res = await fetch(`https://api.github.com${apiPath}`, opts);
+            let data = null;
+            try { data = await res.json(); } catch (e) {}
+            return { ok: res.ok, status: res.status, data };
+        }
+
+        async function getFileSha(owner, repo, filePath) {
+            const res = await ghRequest('GET', `/repos/${owner}/${repo}/contents/${encodePath(filePath)}`);
+            return (res.ok && res.data && res.data.sha) ? res.data.sha : null;
+        }
+
+        async function uploadFileToGH(owner, repo, filePath, base64Content) {
+            const sha = await getFileSha(owner, repo, filePath);
+            const body = { message: `上傳 ${filePath}`, content: base64Content };
+            if (sha) body.sha = sha;
+            return ghRequest('PUT', `/repos/${owner}/${repo}/contents/${encodePath(filePath)}`, body);
+        }
+
+        function logProgress(msg, type = 'info') {
+            const log = document.getElementById('progressLog');
+            const line = document.createElement('div');
+            line.textContent = msg;
+            line.className = type === 'error' ? 'text-red-500' : type === 'ok' ? 'text-green-600' : 'text-gray-500';
+            log.appendChild(line);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function setProgress(done, total, text) {
+            document.getElementById('progressText').textContent = text;
+            document.getElementById('progressCount').textContent = `${done} / ${total}`;
+            const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+            document.getElementById('progressBar').style.width = pct + '%';
+        }
+
+        // ---- Main upload ----
+        document.getElementById('uploadBtn').addEventListener('click', async () => {
+            const folderFiles = document.getElementById('uploadFolderInput').files;
+            const mode = document.querySelector('input[name="repoMode"]:checked').value;
+            const renameToIndex = document.getElementById('renameToIndex').checked;
+
+            if (folderFiles.length === 0) {
+                alert('請先選取上傳資料夾！');
+                return;
+            }
+
+            const progressArea = document.getElementById('progressArea');
+            const logEl = document.getElementById('progressLog');
+            progressArea.classList.remove('hidden');
+            logEl.innerHTML = '';
+            document.getElementById('uploadBtn').disabled = true;
+            document.getElementById('uploadBtn').textContent = '上傳中，請勿關閉頁面...';
+
+            let repoName = '';
+            const repoOwner = githubUser;
+
+            try {
+                // A. Create or pick repo
+                if (mode === 'new') {
+                    repoName = document.getElementById('newRepoName').value.trim();
+                    if (!repoName) { alert('請輸入倉庫名稱！'); return; }
+                    const isPublic = document.getElementById('repoPublic').checked;
+
+                    logProgress(`建立倉庫 "${repoName}"...`);
+                    const res = await ghRequest('POST', '/user/repos', {
+                        name: repoName,
+                        private: !isPublic,
+                        auto_init: true,
+                        description: '學校課程計畫網站'
+                    });
+
+                    if (!res.ok) {
+                        const msg = res.data?.errors?.[0]?.message || res.data?.message || '未知錯誤';
+                        if (msg.includes('already exists') || msg.includes('name already')) {
+                            logProgress(`倉庫已存在，繼續上傳至現有倉庫`, 'ok');
+                        } else {
+                            throw new Error(`建立倉庫失敗：${msg}`);
+                        }
+                    } else {
+                        logProgress(`✅ 倉庫建立成功`, 'ok');
+                        await new Promise(r => setTimeout(r, 2500)); // wait for GitHub to init
+                    }
+                } else {
+                    repoName = document.getElementById('existingRepoSelect').value;
+                    if (!repoName) { alert('請選擇倉庫！'); return; }
+                    logProgress(`使用倉庫：${repoName}`);
+                }
+
+                // B. Collect files and determine target paths
+                // webkitRelativePath = "parentFolderName/sub/file.ext"
+                // We strip the first component (parent folder chosen by user) to get paths relative to repo root.
+                const filesToUpload = [];
+                const TARGET_MAIN_NAME = '調整後的課程計畫首頁.html';
+
+                for (const file of folderFiles) {
+                    const relPath = file.webkitRelativePath; // e.g. "上傳資料夾/國語/file.html"
+                    const parts = relPath.split('/');
+                    parts.shift(); // remove top-level folder name chosen by user
+                    let targetPath = parts.join('/');
+                    if (!targetPath) continue;
+
+                    // Rename if checkbox checked
+                    if (renameToIndex && parts[parts.length - 1] === TARGET_MAIN_NAME) {
+                        parts[parts.length - 1] = 'index.html';
+                        targetPath = parts.join('/');
+                    }
+
+                    filesToUpload.push({ file, path: targetPath });
+                }
+
+                setProgress(0, filesToUpload.length, '準備上傳...');
+
+                let done = 0;
+                for (const { file, path } of filesToUpload) {
+                    setProgress(done, filesToUpload.length, path);
+                    logProgress(`上傳：${path}`);
+
+                    try {
+                        const b64 = await fileToBase64(file);
+                        const res = await uploadFileToGH(repoOwner, repoName, path, b64);
+                        if (!res.ok) {
+                            logProgress(`  ❌ 失敗：${res.data?.message || '未知'}`, 'error');
+                        } else {
+                            logProgress(`  ✅ OK`, 'ok');
+                        }
+                    } catch (err) {
+                        logProgress(`  ❌ ${err.message}`, 'error');
+                    }
+
+                    done++;
+                    setProgress(done, filesToUpload.length,
+                        done === filesToUpload.length ? '上傳完成！' : '上傳中...');
+
+                    // brief pause to avoid rate limits on large uploads
+                    if (done % 10 === 0) await new Promise(r => setTimeout(r, 300));
+                    else await new Promise(r => setTimeout(r, 80));
+                }
+
+                // C. Enable GitHub Pages
+                logProgress('啟用 GitHub Pages...');
+                const pagesPost = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/pages`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `token ${githubToken}`,
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ source: { branch: 'main', path: '/' } })
+                });
+
+                // D. Get Pages URL
+                let pagesBaseUrl = `https://${repoOwner}.github.io/${repoName}/`;
+                try {
+                    const pagesInfoRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/pages`, {
+                        headers: { 'Authorization': `token ${githubToken}`, 'Accept': 'application/vnd.github+json' }
+                    });
+                    if (pagesInfoRes.ok) {
+                        const pi = await pagesInfoRes.json();
+                        if (pi.html_url) pagesBaseUrl = pi.html_url.replace(/\/?$/, '/');
+                    }
+                } catch (e) {}
+
+                // Determine full URL for the main page
+                let mainFileName = renameToIndex ? 'index.html' : TARGET_MAIN_NAME;
+                // Check if it actually exists in uploaded files
+                const hasMainFile = filesToUpload.some(f =>
+                    f.path === mainFileName || f.path.endsWith('/' + mainFileName));
+                const finalUrl = hasMainFile
+                    ? (mainFileName === 'index.html' ? pagesBaseUrl : pagesBaseUrl + mainFileName)
+                    : pagesBaseUrl;
+
+                logProgress('🎉 全部完成！', 'ok');
+
+                document.getElementById('pagesUrl').href = finalUrl;
+                document.getElementById('pagesUrl').textContent = finalUrl;
+                document.getElementById('step4').classList.remove('hidden');
+                document.getElementById('step4').scrollIntoView({ behavior: 'smooth' });
+
+            } catch (err) {
+                logProgress(`❌ 發生錯誤：${err.message}`, 'error');
+                alert(`發生錯誤：${err.message}`);
+            } finally {
+                document.getElementById('uploadBtn').disabled = false;
+                document.getElementById('uploadBtn').textContent = '🚀 開始上傳至 GitHub';
+            }
+        });
+    </script>
+</body>
+</html>
