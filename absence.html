@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>出缺席</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    html, body { height: 100%; overflow: hidden; }
+    .hidden { display: none !important; }
+    #absence-window { display: flex; flex-direction: column; height: 100vh; }
+    #aw-header {
+      flex-shrink: 0;
+      -webkit-app-region: drag;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: #eef2fb;
+      border-bottom: 1px solid #dde2ef;
+    }
+    #aw-header * { -webkit-app-region: no-drag; }
+    #aw-header h2 { font-size: 13px; font-weight: bold; color: #2c3e6b; }
+    #aw-body { flex: 1; overflow-y: auto; min-height: 0; padding: 10px 12px; }
+    .absence-card {
+      border: 1px solid #dde2ef;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+      margin-bottom: 12px;
+    }
+    .absence-card-toggle {
+      width: 100%;
+      border: none;
+      background: #f7f9fe;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      color: #2c3e6b;
+      text-align: left;
+    }
+    .absence-card-toggle::after {
+      content: '▸';
+      transition: transform 0.2s ease;
+    }
+    .absence-card-toggle[aria-expanded="true"]::after {
+      transform: rotate(90deg);
+    }
+    .absence-card-content {
+      padding: 10px 12px 12px;
+      border-top: 1px solid #e6ebf5;
+    }
+    .absence-card-content.hidden { display: none; }
+    .absence-empty { color: #98a2b3; font-size: 13px; padding: 6px 0; }
+    .absence-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .absence-table th {
+      background: #2c3e6b;
+      color: white;
+      padding: 6px 8px;
+      text-align: left;
+      font-weight: normal;
+      position: sticky;
+      top: 0;
+    }
+    .absence-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #e8edf5;
+      vertical-align: top;
+    }
+    .absence-table tr:last-child td { border-bottom: none; }
+    .absence-table tbody tr:hover td { background: #f8fbff; }
+    .absence-mode-switch {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .absence-radio {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border: 1px solid #d8dee9;
+      border-radius: 999px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      color: #2c5282;
+    }
+    .absence-radio input {
+      margin: 0;
+    }
+    .absence-pill-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .absence-pill {
+      border: 1px solid #d8dee9;
+      background: #fff;
+      color: #2c5282;
+      border-radius: 999px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .absence-pill.active {
+      border-color: #2c6bed;
+      background: #edf4ff;
+      color: #1d4ed8;
+      font-weight: 700;
+    }
+    .absence-inline-note {
+      font-size: 12px;
+      color: #667085;
+    }
+    .absence-static-type {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: #fff7ed;
+      color: #c05621;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .absence-link-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .absence-link-row a {
+      color: #2563eb;
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .absence-link-row a:hover { text-decoration: underline; }
+    .absence-hint {
+      font-size: 12px;
+      color: #667085;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+    .absence-summary-table td,
+    .absence-summary-table th {
+      text-align: center;
+    }
+    .absence-summary-table td:first-child,
+    .absence-summary-table th:first-child {
+      text-align: left;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div id="absence-window">
+    <div id="aw-header">
+      <h2 id="absence-panel-title">🧾 出缺席</h2>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button id="btn-absence-back" class="btn-small hidden">◀ 返回列表</button>
+        <button id="btn-absence-new" class="btn-small btn-green">＋ 新增請假</button>
+        <button id="btn-close-absence" class="btn-small">✕ 關閉</button>
+      </div>
+    </div>
+
+    <div id="aw-body">
+      <div id="absence-list-view">
+        <div class="absence-card">
+          <button type="button" class="absence-card-toggle" data-target="absence-records-card" aria-expanded="false">出缺席記錄列表</button>
+          <div id="absence-records-card" class="absence-card-content hidden">
+            <div id="absence-records-empty" class="absence-empty">尚無出缺席記錄</div>
+            <table id="absence-records-table" class="absence-table hidden">
+              <thead>
+                <tr>
+                  <th>日期</th>
+                  <th>座號姓名</th>
+                  <th>假別</th>
+                  <th>日數</th>
+                  <th>備註</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="absence-records-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="absence-card">
+          <button type="button" class="absence-card-toggle" data-target="absence-summary-card" aria-expanded="false">全班出缺席列表</button>
+          <div id="absence-summary-card" class="absence-card-content hidden">
+            <div id="absence-summary-empty" class="absence-empty">尚無可統計資料</div>
+            <table id="absence-summary-table" class="absence-table absence-summary-table hidden">
+              <thead>
+                <tr>
+                  <th>座號姓名</th>
+                  <th>事假</th>
+                  <th>病假</th>
+                  <th>公假</th>
+                  <th>喪假</th>
+                  <th>遲到早退</th>
+                </tr>
+              </thead>
+              <tbody id="absence-summary-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="absence-form" class="hidden">
+        <div class="cr-row">
+          <label class="cr-label">文字帶入</label>
+          <div class="cr-strategy-wrap">
+            <div class="cr-strategy-toolbar">
+              <button id="btn-absence-parse" class="btn-small btn-ai" type="button">✨ 分析帶入</button>
+              <span id="absence-parse-status" class="ai-status"></span>
+            </div>
+            <textarea id="absence-parse-text" class="cr-textarea" rows="3" placeholder="可貼上請假或遲到文字，例如：王小明 4/15~4/16 病假 7節 退餐"></textarea>
+          </div>
+        </div>
+
+        <div class="cr-row">
+          <label class="cr-label">類型</label>
+          <div class="absence-mode-switch">
+            <label class="absence-radio">
+              <input type="radio" name="absence-mode" value="leave" checked>
+              <span>請假</span>
+            </label>
+            <label class="absence-radio">
+              <input type="radio" name="absence-mode" value="late">
+              <span>遲到</span>
+            </label>
+            <label class="absence-radio">
+              <input type="radio" name="absence-mode" value="early">
+              <span>早退</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="cr-row">
+          <label class="cr-label">座號姓名</label>
+          <select id="absence-student" class="cr-select cr-full"></select>
+        </div>
+
+        <div class="cr-row">
+          <label class="cr-label">開始日期</label>
+          <input type="date" id="absence-start-date" class="cr-input">
+        </div>
+
+        <div class="cr-row" id="absence-end-date-row">
+          <label class="cr-label">結束日期</label>
+          <input type="date" id="absence-end-date" class="cr-input">
+        </div>
+
+        <div class="cr-row" id="absence-periods-row">
+          <label class="cr-label">節數</label>
+          <div style="flex:1;display:flex;align-items:center;gap:8px;">
+            <input type="number" id="absence-periods" class="cr-input" min="1" max="7" step="1" value="7">
+            <span class="absence-inline-note">跨日請假時會自動改由日數計算</span>
+          </div>
+        </div>
+
+        <div class="cr-row" id="absence-days-row">
+          <label class="cr-label">日數</label>
+          <input type="text" id="absence-days" class="cr-input" readonly>
+        </div>
+
+        <div class="cr-row">
+          <label class="cr-label">假別</label>
+          <div style="flex:1;">
+            <div id="absence-leave-type-buttons" class="absence-pill-group"></div>
+            <div id="absence-late-type-display" class="absence-static-type hidden">遲到早退</div>
+          </div>
+        </div>
+
+        <div id="absence-meal-section">
+          <div class="cr-row">
+            <label class="cr-label">是否退餐</label>
+            <div id="absence-meal-buttons" class="absence-pill-group">
+              <button type="button" class="absence-pill" data-meal="是">是</button>
+              <button type="button" class="absence-pill" data-meal="否">否</button>
+            </div>
+          </div>
+
+          <div class="absence-card">
+            <button type="button" class="absence-card-toggle" data-target="absence-meal-note-card" aria-expanded="false">退餐說明</button>
+            <div id="absence-meal-note-card" class="absence-card-content hidden">
+              <div class="absence-hint">一、依據本校午餐收費、退費辦法，符合下列停餐原因者，得申請午餐退費：
+1.病假：
+因個人疾病，請假連續達三個上課日以上，但通知當日，不予退費。
+當日由導師提出退費申請。
+2.事假(含喪假)：
+因個人事由，請假連續達五個上課日以上，並辦妥請假手續者。
+退費日一星期前提出申請。
+3.公假：球隊比賽、幼童軍、戶外教學…等。
+退費日一星期前提出申請。</div>
+            </div>
+          </div>
+
+          <div class="cr-row hidden" id="absence-meal-returned-row">
+            <label class="cr-label">是否已退餐</label>
+            <div class="absence-link-row">
+              <label class="cr-student-checkbox" style="margin:0;">
+                <input type="checkbox" id="absence-meal-returned">
+                <span>已完成退餐</span>
+              </label>
+              <a href="https://docs.google.com/forms/d/e/1FAIpQLSeJCEw96gILFrefoyOI4W2ZW9NyZyhMv6zZcbhrbQCw1_Q3OA/viewform?usp=header" target="_blank">退餐連結</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="cr-row">
+          <label class="cr-label">備註</label>
+          <textarea id="absence-note" class="cr-textarea" rows="3" placeholder=""></textarea>
+        </div>
+
+        <div class="cr-actions">
+          <button id="btn-save-absence" class="btn-small btn-green">💾 存檔</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="absence.js"></script>
+</body>
+</html>
