@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>教室座位表生成器</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <h1>教室座位表生成器</h1>
+</header>
+
+<main class="wrap">
+
+  <section class="card">
+    <div class="grid3">
+
+      <div class="col">
+        <h2>① 學生名單</h2>
+        <p class="hint">每行一位學生，可寫「座號 姓名」或只寫「姓名」（會自動編號）。可在姓名後加上身分，例如「2 張芮箖 教練」，未指定則預設為「球員」。</p>
+        <textarea id="studentInput" rows="10" placeholder="1 陳亮宇&#10;2 張芮箖 教練&#10;3 黃尚謙&#10;..."></textarea>
+        <div class="btnrow">
+          <button id="btnParseStudents" class="btn primary">匯入學生</button>
+          <span id="studentCount" class="count">0 位學生</span>
+        </div>
+      </div>
+
+      <div class="col">
+        <h2>② 座位情境</h2>
+        <p class="hint">選擇排法後按「產生佈局」；產生後每張桌子仍可自由拖曳調整。</p>
+        <div class="scenario-grid">
+          <button class="btn scenario" data-mode="group">分組</button>
+          <button class="btn scenario" data-mode="rows">排排坐</button>
+          <button class="btn scenario" data-mode="pairs">兩兩配對</button>
+          <button class="btn scenario" data-mode="ushape">U字型</button>
+          <button class="btn scenario" data-mode="circle">圓形討論</button>
+          <button class="btn scenario" data-mode="free">自由拖曳</button>
+        </div>
+        <div id="customScenarioList" class="custom-scenario-list"></div>
+        <div class="btnrow">
+          <button id="btnSaveScenario" class="btn small">💾 另存目前佈局為情境</button>
+        </div>
+      </div>
+
+      <div class="col">
+        <h2>③ 排列設定</h2>
+        <div id="modeSettings" class="mode-settings"></div>
+        <div class="btnrow">
+          <button id="btnGenerate" class="btn primary">產生佈局</button>
+        </div>
+        <div class="btnrow" id="freeDeskBtns">
+          <button id="btnAddDesk" class="btn">＋新增桌子</button>
+          <button id="btnClearDesks" class="btn danger-outline">清空桌子</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="card">
+    <details>
+      <summary><h2 class="inline">④ 進階設定（選填，座位限制）</h2></summary>
+      <div class="grid3 advanced">
+        <div class="col">
+          <h3>保持距離名單（不可相鄰）</h3>
+          <div class="pairbuilder">
+            <select id="apartA"></select>
+            <span>與</span>
+            <select id="apartB"></select>
+            <button id="btnAddApart" class="btn small">加入</button>
+          </div>
+          <div id="apartList" class="chiplist"></div>
+        </div>
+        <div class="col">
+          <h3>不可同組名單</h3>
+          <p class="hint">用於「自動排列」的「不可同組」選項，讓兩人不會被分到同一組。</p>
+          <div class="pairbuilder">
+            <select id="groupApartA"></select>
+            <span>與</span>
+            <select id="groupApartB"></select>
+            <button id="btnAddGroupApart" class="btn small">加入</button>
+          </div>
+          <div id="groupApartList" class="chiplist"></div>
+        </div>
+        <div class="col">
+          <h3>前排優先名單</h3>
+          <div class="pairbuilder">
+            <select id="frontSelect"></select>
+            <button id="btnAddFront" class="btn small">加入前排</button>
+          </div>
+          <div id="frontList" class="chiplist"></div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section class="card">
+    <details>
+      <summary><h2 class="inline">⑤ 身分設定與異質分組（選填）</h2></summary>
+      <p class="hint">貼學生名單時可在姓名後加上身分（如「教練」），也可以在下方個別設定。設定各身分「每組上限」後，到⑥座位表區塊勾選「身分每組上限」再按「自動排列」，就會讓每組平均分配到教練、助教、經理等角色。</p>
+      <div class="grid2">
+        <div class="col">
+          <h3>身分類別（可自訂，設定每組上限、圖示或代號）</h3>
+          <div id="rolesConfig" class="roles-config"></div>
+          <div class="btnrow">
+            <button id="btnAddRole" class="btn small">＋新增身分</button>
+            <button id="btnResetRoles" class="btn small" title="移除目前名單沒人使用的身分，並為名單裡出現、但清單還沒有的身分新增項目">🔄 依目前名單重設身分類別</button>
+          </div>
+          <label class="arrange-check" style="margin-top:10px;">
+            <input type="checkbox" id="chkShowRoleIcons" checked> 座位表上以圖示／代號顯示身分（未設定則仍顯示文字）
+          </label>
+        </div>
+        <div class="col">
+          <h3>各學生身分</h3>
+          <div id="studentRoleList" class="student-role-list"></div>
+        </div>
+      </div>
+    </details>
+    <div class="btnrow">
+      <span id="groupCountInfo" class="hint"></span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="row-between">
+      <h2>⑥ 座位表</h2>
+      <div class="btnrow">
+        <input id="roomTitle" type="text" placeholder="班級／表格標題（選填）" class="title-input">
+        <button id="btnAutoFill" class="btn">依序自動填入</button>
+        <button id="btnClearAssign" class="btn danger-outline">清空座位指派</button>
+      </div>
+    </div>
+
+    <div class="arrange-box">
+      <h3>自動排列</h3>
+      <p class="hint">勾選這次排列要套用哪些限制（限制內容在④進階設定、⑤身分設定裡調整），再按「自動排列」。</p>
+      <div class="arrange-checks">
+        <label class="arrange-check"><input type="checkbox" id="chkApart" checked> 不可相鄰：保持距離名單裡的兩人不坐隔壁</label>
+        <label class="arrange-check"><input type="checkbox" id="chkFront" checked title="有套用分組時，會盡量分到桌子平均位置較靠前的組別，且排在該組最前面；不保證絕對是全班最前排"> 前排優先：前排優先名單的學生盡量坐前排（若同時套用分組，是盡量靠近前面的組別）</label>
+        <label class="arrange-check"><input type="checkbox" id="chkRoleCap" checked> 身分每組上限：如教練每組限1位（需先標記分組）</label>
+        <label class="arrange-check"><input type="checkbox" id="chkGroupApart" checked> 不可同組：不可同組名單的兩人不分到同一組（需先標記分組）</label>
+      </div>
+      <div class="btnrow">
+        <button id="btnArrange" class="btn primary">自動排列</button>
+      </div>
+      <div id="arrangeResult" class="arrange-result empty"></div>
+    </div>
+
+    <div class="btnrow">
+      <button id="btnUndo" class="btn" disabled>↶ 復原</button>
+      <button id="btnRedo" class="btn" disabled>↷ 重做</button>
+      <button id="btnToggleGroupPaint" class="btn">設定分組（點選座位）</button>
+    </div>
+    <div id="groupPaintBar" class="paint-bar" style="display:none;"></div>
+
+    <div class="board">黑板</div>
+    <div class="canvas-scroll">
+      <div id="canvas" class="canvas"></div>
+    </div>
+
+    <h3>未分配學生</h3>
+    <div id="pool" class="pool"></div>
+  </section>
+
+  <section class="card">
+    <h2>⑦ 保存與匯出</h2>
+    <div class="btnrow">
+      <button id="btnSave" class="btn primary">保存座位表</button>
+      <button id="btnLoad" class="btn">加載座位表</button>
+      <input id="fileLoad" type="file" accept="application/json" style="display:none;">
+      <button id="btnPreview" class="btn">預覽座位表</button>
+      <button id="btnExportRoster" class="btn">匯出組別名單（.csv）</button>
+      <button id="btnReset" class="btn danger-outline">重置</button>
+    </div>
+  </section>
+
+</main>
+
+<div id="popup" class="popup" style="display:none;"></div>
+<div id="overlay" class="overlay" style="display:none;"></div>
+
+<div id="previewModal" class="preview-modal" style="display:none;">
+  <div class="preview-toolbar noprint">
+    <span>座位表預覽</span>
+    <div>
+      <button id="btnTeacherView" class="btn">🔄 切換為老師視角</button>
+      <button id="btnPrint" class="btn primary">列印</button>
+      <button id="btnClosePreview" class="btn">關閉</button>
+    </div>
+  </div>
+  <h1 id="previewTitle" class="preview-title"></h1>
+  <div id="previewLayoutWrap" class="preview-layout-wrap">
+    <div class="preview-board">黑板</div>
+    <div id="previewCanvas" class="preview-canvas"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
