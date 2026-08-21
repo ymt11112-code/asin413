@@ -404,6 +404,9 @@ details[open] summary:before{content:"▾ ";}
 .preview-layout-wrap.mirrored{flex-direction:column-reverse;}
 .preview-board{
   text-align:center;background:#4c2e94;color:#fff;padding:14px;margin:16px 24px 20px;border-radius:8px;letter-spacing:3px;
+  border:2px solid #2f2540;
+  -webkit-print-color-adjust:exact;
+  print-color-adjust:exact;
 }
 .preview-canvas{position:relative;margin:0 auto 40px;min-height:200px;}
 .preview-desk{
@@ -417,9 +420,17 @@ details[open] summary:before{content:"▾ ";}
   font-size:11.5px;font-weight:600;color:#555;margin-bottom:2px;
 }
 
+.preview-print-outer{overflow:hidden;}
+.preview-print-area{display:inline-block;}
+
 @media print{
-  body *{visibility:hidden;}
-  #previewModal, #previewModal *{visibility:visible;}
-  #previewModal{position:absolute;inset:0;}
+  @page{ size: A4 landscape; margin: 10mm; }
+  body > *:not(#previewModal){ display:none !important; }
+  #previewModal{
+    position: static !important;
+    display: flex !important;
+    justify-content: center;
+    width: 100%;
+  }
   .noprint{display:none !important;}
 }

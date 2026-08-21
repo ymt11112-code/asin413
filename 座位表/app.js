@@ -1446,6 +1446,30 @@ function renderPreviewDesks(){
   document.getElementById('btnTeacherView').textContent = previewMirrored ? '↩ 切換為學生視角' : '🔄 切換為老師視角';
 }
 
+// 列印時把整份座位表縮放到剛好塞進一張 A4 橫向紙（含邊界），畫面上的預覽不受影響
+function applyPrintScale(){
+  const outer = document.getElementById('previewPrintOuter');
+  const area = document.getElementById('previewPrintArea');
+  area.style.transform = 'none';
+  const contentW = area.scrollWidth, contentH = area.scrollHeight;
+  const mmToPx = 96/25.4;
+  const pageW = (297-20)*mmToPx, pageH = (210-20)*mmToPx; // A4橫向 297x210mm，扣除左右/上下各10mm邊界
+  const scale = Math.min(pageW/contentW, pageH/contentH, 1);
+  area.style.transformOrigin = 'top left';
+  area.style.transform = `scale(${scale})`;
+  outer.style.width = (contentW*scale) + 'px';
+  outer.style.height = (contentH*scale) + 'px';
+}
+function removePrintScale(){
+  const outer = document.getElementById('previewPrintOuter');
+  const area = document.getElementById('previewPrintArea');
+  area.style.transform = '';
+  outer.style.width = '';
+  outer.style.height = '';
+}
+window.addEventListener('beforeprint', applyPrintScale);
+window.addEventListener('afterprint', removePrintScale);
+
 function openPreview(){
   document.getElementById('previewTitle').textContent = document.getElementById('roomTitle').value || '教室座位表';
   previewMirrored = false;
