@@ -1,7 +1,7 @@
 // ===== 教室座位表生成器 =====
 // 本機端運作，不需要伺服器；資料以 *.json 保存/加載。
 
-const DESK_W = 112, DESK_H = 72, GAP = 16, GROUP_GAP = 36, CANVAS_PAD = 20, AISLE_GAP = 22, PAIR_GROUP_GAP = 30;
+const DESK_W = 112, DESK_H = 72, GAP = 16, GROUP_GAP = 36, CANVAS_PAD = 20, PAIR_GROUP_GAP = 30;
 const NEIGHBOR_THRESHOLD = 125;
 const GROUP_BORDER = ['#e07ca0','#4f9fe0','#5cb85c','#e0b34f','#9b6fe0','#3fbfa8','#e08a5c','#6f7fe0'];
 const GROUP_BG = ['#fdeef2','#eaf4fd','#eefaee','#fdf6e6','#f3ecfd','#e6fbf7','#fdeee6','#eceffd'];
@@ -299,23 +299,37 @@ function resetRolesFromStudents(){
 }
 
 // ---------- 佈局產生器 ----------
+// 把 count 個座位排進寬度固定為 cols 欄的區塊：每排排滿 cols 個就換行，
+// 最後一排若不足 cols 個，會置中對齊（例如5人、2欄 → 2、2、1，最後的1置中）
+function layoutZoneRows(positions, count, cols, baseX, baseY, groupIndex){
+  const rowWidth = cols*(DESK_W+GAP) - GAP;
+  let seat = 0, row = 0;
+  while(seat < count){
+    const remaining = Math.min(cols, count-seat);
+    const usedWidth = remaining*(DESK_W+GAP) - GAP;
+    const xOffset = remaining<cols ? (rowWidth-usedWidth)/2 : 0;
+    for(let i=0;i<remaining;i++){
+      positions.push({x: baseX+xOffset+i*(DESK_W+GAP), y: baseY+row*(DESK_H+GAP), groupIndex});
+    }
+    seat += remaining;
+    row++;
+  }
+  return row;
+}
+
 function genGroup(n, groupCount){
   groupCount = Math.max(1, groupCount|0 || 1);
   const base = Math.floor(n/groupCount), rem = n % groupCount;
   const groupSizes = Array.from({length: groupCount}, (_,g)=> base + (g<rem?1:0));
-  const groupsPerRow = 3, maxRowsInGroup = 3;
-  const groupBoxW = 3*DESK_W + 2*GAP;
+  const groupsPerRow = 3, cols = 2, maxRowsInGroup = 3;
+  const groupBoxW = cols*DESK_W + (cols-1)*GAP;
   const groupBoxH = maxRowsInGroup*DESK_H + (maxRowsInGroup-1)*GAP;
   const positions = [];
   groupSizes.forEach((size, g)=>{
     const gRow = Math.floor(g/groupsPerRow), gCol = g % groupsPerRow;
     const baseX = CANVAS_PAD + gCol*(groupBoxW+GROUP_GAP);
     const baseY = CANVAS_PAD + gRow*(groupBoxH+GROUP_GAP);
-    const cols = size>=3 ? 3 : Math.max(1,size);
-    for(let seat=0; seat<size; seat++){
-      const r = Math.floor(seat/cols), c = seat % cols;
-      positions.push({x: baseX + c*(DESK_W+GAP), y: baseY + r*(DESK_H+GAP), groupIndex: g});
-    }
+    layoutZoneRows(positions, size, cols, baseX, baseY, g);
   });
   return positions;
 }
@@ -325,8 +339,7 @@ function genRows(n, perRow){
   const positions = [];
   for(let i=0;i<n;i++){
     const r = Math.floor(i/perRow), c = i % perRow;
-    const aisle = Math.floor(c/3)*AISLE_GAP;
-    positions.push({x: CANVAS_PAD + c*(DESK_W+GAP) + aisle, y: CANVAS_PAD + r*(DESK_H+GAP)});
+    positions.push({x: CANVAS_PAD + c*(DESK_W+GAP), y: CANVAS_PAD + r*(DESK_H+GAP)});
   }
   return positions;
 }
@@ -345,32 +358,87 @@ function genPairs(n, pairsPerRow){
   return positions;
 }
 
+// U 字型（ㄇ字型）：左右各分上下兩區（各2欄），中間只在下方排一區（2欄），中間上方留空對著黑板，五區各自上色
 function genUShape(n){
-  if(n<3) return genRows(n, 4);
-  let legCount = Math.max(1, Math.round(n*0.28));
-  let bottomCount = n - legCount*2;
-  if(bottomCount<1){
-    legCount = Math.max(1, Math.floor((n-1)/2));
-    bottomCount = n - legCount*2;
-    if(bottomCount<1){ bottomCount=1; legCount=Math.floor((n-1)/2)||1; }
-  }
-  const rightCount = n - legCount - bottomCount;
+  const zoneCount = 5;
+  const base = Math.floor(n/zoneCount), rem = n % zoneCount;
+  const sizes = Array.from({length:zoneCount}, (_,z)=> base + (z<rem?1:0));
+  const [leftTopN, leftBottomN, rightTopN, rightBottomN, midBottomN] = sizes;
+
+  const sideCols = 2;
+  const sideW = sideCols*DESK_W + (sideCols-1)*GAP;
+  const midX = CANVAS_PAD + sideW + GROUP_GAP;
+  const rightX = midX + sideW + GROUP_GAP;
+  const maxTopRows = 3; // 固定上方區塊高度，讓下排（含中間）左右對齊
+  const bottomY = CANVAS_PAD + maxTopRows*(DESK_H+GAP) + GROUP_GAP;
+
   const positions = [];
-  for(let i=0;i<legCount;i++) positions.push({x: CANVAS_PAD, y: CANVAS_PAD + i*(DESK_H+GAP)});
-  for(let i=0;i<bottomCount;i++) positions.push({x: CANVAS_PAD + (i+1)*(DESK_W+GAP), y: CANVAS_PAD + legCount*(DESK_H+GAP)});
-  for(let i=0;i<rightCount;i++) positions.push({x: CANVAS_PAD + (bottomCount+1)*(DESK_W+GAP), y: CANVAS_PAD + i*(DESK_H+GAP)});
+  layoutZoneRows(positions, leftTopN, sideCols, CANVAS_PAD, CANVAS_PAD, 0);
+  layoutZoneRows(positions, rightTopN, sideCols, rightX, CANVAS_PAD, 2);
+  layoutZoneRows(positions, leftBottomN, sideCols, CANVAS_PAD, bottomY, 1);
+  layoutZoneRows(positions, midBottomN, sideCols, midX, bottomY, 4);
+  layoutZoneRows(positions, rightBottomN, sideCols, rightX, bottomY, 3);
+
   return positions;
 }
 
-function genCircle(n){
-  if(n<1) return [];
-  const radius = Math.max(140, n*16);
-  const cx = radius + CANVAS_PAD + DESK_W/2, cy = radius + CANVAS_PAD + DESK_H/2;
-  const positions = [];
-  for(let i=0;i<n;i++){
-    const angle = (2*Math.PI*i/n) - Math.PI/2;
-    positions.push({x: cx + radius*Math.cos(angle) - DESK_W/2, y: cy + radius*Math.sin(angle) - DESK_H/2});
+// 分區排排坐：先用「兩兩配對」排好座位（沿用 genPairs 的幾何排法），
+// 再依組數把整排學生依座位順序分成幾個顏色區塊，不改變桌子本身的排法
+function genZoneRows(n, zoneCount, pairsPerRow){
+  const positions = genPairs(n, pairsPerRow);
+  zoneCount = Math.max(1, zoneCount|0 || 1);
+  const base = Math.floor(n/zoneCount), rem = n % zoneCount;
+  let idx = 0;
+  for(let z=0; z<zoneCount; z++){
+    const size = base + (z<rem?1:0);
+    for(let i=0; i<size && idx<positions.length; i++, idx++){
+      positions[idx].groupIndex = z;
+    }
   }
+  return positions;
+}
+
+// 學思達分組：固定每組4人（2欄2列兩兩併坐），並依 U 字型原則排列——
+// 左右各分成上下疊放的小組（各2欄），中間只從第二格開始排（也是2欄），中間最上方留空對著黑板
+function genXueSiDa(n){
+  const groupSize = 4;
+  const groupCount = Math.max(1, Math.ceil(n/groupSize));
+  const base = Math.floor(n/groupCount), rem = n % groupCount;
+  const groupSizes = Array.from({length: groupCount}, (_,g)=> base + (g<rem?1:0));
+
+  const cols = 2, slotRows = 2; // 每組最多4人＝2列，固定slot高度方便同欄對齊
+  const colW = cols*DESK_W + (cols-1)*GAP;
+  const slotH = slotRows*DESK_H + (slotRows-1)*GAP;
+  const midX = CANVAS_PAD + colW + GROUP_GAP;
+  const rightX = midX + colW + GROUP_GAP;
+
+  let leftCount, rightCount, midCount;
+  if(groupCount < 3){
+    midCount = 0;
+    leftCount = Math.ceil(groupCount/2);
+    rightCount = groupCount - leftCount;
+  } else {
+    midCount = Math.max(1, Math.round(groupCount/5));
+    const sideTotal = groupCount - midCount;
+    leftCount = Math.ceil(sideTotal/2);
+    rightCount = sideTotal - leftCount;
+  }
+
+  const positions = [];
+  let gi = 0;
+  function placeColumn(count, colX, startSlot){
+    for(let i=0;i<count;i++){
+      const y = CANVAS_PAD + (startSlot+i)*(slotH+GROUP_GAP);
+      layoutZoneRows(positions, groupSizes[gi], cols, colX, y, gi);
+      gi++;
+    }
+  }
+  placeColumn(leftCount, CANVAS_PAD, 0);
+  placeColumn(rightCount, rightX, 0);
+  // 中間對齊左右兩欄「較高那欄」的最底部，讓底部連成一條線（真正的 U 型），上方全部留空
+  const maxSideRows = Math.max(leftCount, rightCount);
+  placeColumn(midCount, midX, Math.max(0, maxSideRows - midCount));
+
   return positions;
 }
 
@@ -423,7 +491,8 @@ function generateLayout(){
   else if(state.mode==='rows') positions = genRows(n, state.settings.perRow);
   else if(state.mode==='pairs') positions = genPairs(n, state.settings.pairsPerRow);
   else if(state.mode==='ushape') positions = genUShape(n);
-  else if(state.mode==='circle') positions = genCircle(n);
+  else if(state.mode==='zonerows') positions = genZoneRows(n, state.settings.groupCount, state.settings.pairsPerRow);
+  else if(state.mode==='xuesida') positions = genXueSiDa(n);
   applyPositions(positions);
   render();
   toast('已產生新的座位佈局');
@@ -968,8 +1037,9 @@ function renderModeSettings(){
   if(state.mode==='group') html = `<label>組數：<input type="number" id="setGroupCount" min="1" max="20" value="${state.settings.groupCount}"></label>`;
   else if(state.mode==='rows') html = `<label>每排座位數：<input type="number" id="setPerRow" min="1" max="20" value="${state.settings.perRow}"></label>`;
   else if(state.mode==='pairs') html = `<label>每排配對數：<input type="number" id="setPairsPerRow" min="1" max="10" value="${state.settings.pairsPerRow}"></label>`;
-  else if(state.mode==='ushape') html = `<p class="hint">依學生人數自動排成 U 字型，開口朝向黑板。</p>`;
-  else if(state.mode==='circle') html = `<p class="hint">依學生人數自動排成圓形，適合小組討論。</p>`;
+  else if(state.mode==='zonerows') html = `<label>每排配對數：<input type="number" id="setPairsPerRow" min="1" max="10" value="${state.settings.pairsPerRow}"></label><label>分色組數：<input type="number" id="setGroupCount" min="1" max="20" value="${state.settings.groupCount}"></label>`;
+  else if(state.mode==='ushape') html = `<p class="hint">依學生人數自動排成 ㄇ 字型：左右各分上下兩區（各2欄），中間只在下方排一區，中間上方留空對著黑板，各區自動上色。</p>`;
+  else if(state.mode==='xuesida') html = `<p class="hint">固定每組4人、兩兩併坐（2欄2列），並依 U 字型原則排列：左右各分上下疊放，中間只排下方、上方留空對著黑板，不需額外設定。</p>`;
   else if(state.mode==='free') html = `<p class="hint">用右側按鈕新增／清空桌子，並拖曳桌子上緣調整位置。</p>`;
   else if(state.mode.startsWith('custom:')){
     const sc = state.customScenarios.find(x=> 'custom:'+x.id===state.mode);
